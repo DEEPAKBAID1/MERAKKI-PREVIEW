@@ -1,0 +1,5481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roll Weighing — Preview</title>
+<style>
+  :root{
+    --ink:#1c2230;
+    --paper:#f6f4ef;
+    --card:#ffffff;
+    --line:#e2ddd2;
+    --accent:#9a3324;
+    --accent-soft:#f0e2dd;
+    --muted:#7a7468;
+    --good:#3c6e52;
+    --good-soft:#e3ede7;
+    --amber:#a9762b;
+    --amber-soft:#f3e8d8;
+    --red:#9a3324;
+    --red-soft:#f0e2dd;
+    --priority-red:#c81e3b;
+    --priority-red-soft:#fbe6ea;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:100vh;
+    background:var(--card);
+    display:flex;
+    flex-direction:column;
+    border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
+  }
+
+  header{
+    padding:18px 22px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .tag{
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:600;
+  }
+  h1{
+    margin:0;
+    font-size:21px;
+    font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .back-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:2px;
+  }
+  .back-btn{
+    background:none;border:none;color:var(--muted);
+    font-size:13px;font-weight:700;cursor:pointer;padding:0;
+    display:flex;align-items:center;gap:4px;
+  }
+
+  .screen{ display:none; flex:1; flex-direction:column; }
+  #ownerHomeScreen{ position:relative; overflow:hidden; }
+  .screen.show{ display:flex; }
+
+  /* ---------- DASHBOARD ---------- */
+  .tabs{
+    display:flex;
+    padding:14px 22px 0;
+    gap:6px;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 0;
+    font-size:13px;
+    font-weight:700;
+    color:var(--muted);
+    border-bottom:2.5px solid var(--line);
+    cursor:pointer;
+  }
+  .tab.active{
+    color:var(--ink);
+    border-bottom-color:var(--ink);
+  }
+  .tab .count{
+    color:var(--muted);
+    font-weight:600;
+  }
+
+  .lot-list{
+    padding:14px 22px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    flex:1;
+    overflow-y:auto;
+  }
+  .lot-list.hidden-list{ display:none; }
+  .search-row.hidden-row{ display:none; }
+  .lot-card{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:14px 14px;
+    cursor:pointer;
+    background:var(--card);
+  }
+  .lot-card .top-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .lot-card .lot-name{
+    font-size:15px;
+    font-weight:800;
+    color:var(--ink);
+  }
+  .lot-card .lot-detail{
+    font-size:12.5px;
+    color:var(--muted);
+    font-weight:600;
+    margin-top:2px;
+  }
+  .pct-badge{
+    font-size:13px;
+    font-weight:800;
+    padding:4px 9px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .pct-badge.low{ background:var(--red-soft); color:var(--red); }
+  .pct-badge.mid{ background:var(--amber-soft); color:var(--amber); }
+  .pct-badge.high{ background:var(--good-soft); color:var(--good); }
+  .pct-badge.done{ background:var(--good); color:#fff; }
+
+  .bar-track{
+    height:7px;
+    background:var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    margin-top:10px;
+  }
+  .bar-fill{
+    height:100%;
+    border-radius:4px;
+  }
+  .bar-fill.low{ background:var(--red); }
+  .bar-fill.mid{ background:var(--amber); }
+  .bar-fill.high{ background:var(--good); }
+  .bar-fill.done{ background:var(--good); }
+
+  .lot-meta{
+    display:flex;
+    justify-content:space-between;
+    margin-top:8px;
+    font-size:11.5px;
+    color:var(--muted);
+    font-weight:600;
+  }
+
+  .age-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:9px;
+    padding-top:9px;
+    border-top:1px solid var(--line);
+  }
+  .created-by-text{
+    margin-left:auto;
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+  }
+  .age-dot{
+    width:7px;height:7px;
+    border-radius:50%;
+    flex-shrink:0;
+  }
+  .age-dot.age-green, .age-text.age-green{ color:var(--good); }
+  .age-dot.age-green{ background:var(--good); }
+  .age-dot.age-yellow, .age-text.age-yellow{ color:var(--amber); }
+  .age-dot.age-yellow{ background:var(--amber); }
+  .age-dot.age-red, .age-text.age-red{ color:var(--red); }
+  .age-dot.age-red{ background:var(--red); }
+  .age-text{ font-size:11px; font-weight:700; }
+
+  .empty-note{
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    padding:30px 20px;
+  }
+
+  /* ---------- WEIGHING SCREEN ---------- */
+  .body{
+    padding:18px 22px 30px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .field-label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    font-weight:700;
+    margin-bottom:7px;
+    display:block;
+  }
+  .jump-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    position:relative;
+  }
+  .jump-trigger{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:11px 12px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--paper);
+    font-size:14px;
+    font-weight:700;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .jump-trigger .chev{
+    color:var(--muted);
+    font-size:11px;
+  }
+  .jump-trigger .roll-pill-status{
+    font-size:11px;
+    font-weight:700;
+    padding:2px 7px;
+    border-radius:8px;
+    margin-left:8px;
+  }
+  .jump-trigger .roll-pill-status.done{ background:var(--good-soft); color:var(--good); }
+  .jump-trigger .roll-pill-status.pending{ background:var(--line); color:var(--muted); }
+  .jump-btn{
+    padding:11px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .jump-panel{
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;
+    right:0;
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    box-shadow:0 12px 30px -10px rgba(28,34,48,.2);
+    max-height:280px;
+    overflow-y:auto;
+    z-index:20;
+    display:none;
+  }
+  .jump-panel.show{ display:block; }
+  .jump-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:11px 14px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+    font-size:13.5px;
+  }
+  .jump-item:last-child{ border-bottom:none; }
+  .jump-item:hover{ background:var(--paper); }
+  .jump-item .jr-left{ display:flex; align-items:center; gap:8px; }
+  .jump-item .jr-roll{ font-weight:700; color:var(--ink); }
+  .jump-item .jr-weight{ font-weight:700; color:var(--good); font-size:13px; }
+  .jump-item .jr-weight.empty{ color:var(--muted); font-weight:600; font-style:italic; }
+  .jump-item .jr-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--good);
+    flex-shrink:0;
+  }
+  .jump-item .jr-dot.pending{ background:var(--line); border:1.5px solid var(--muted); }
+  .jump-item .jr-seg{ font-weight:500; color:var(--muted); font-size:12.5px; }
+
+  .lookup-card{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--paper);
+  }
+  .lookup-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:13px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .lookup-row:last-child{border-bottom:none;}
+  .lookup-row .k{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    font-weight:700;
+  }
+  .lookup-row .v{
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .lookup-row .v.muted{ color:var(--muted); font-weight:600; }
+  .swatch{
+    display:inline-block;
+    width:10px;height:10px;
+    border-radius:50%;
+    background:#15151a;
+    margin-right:7px;
+    vertical-align:-1px;
+    border:1px solid #00000022;
+  }
+  .weight-wrap{ position:relative; }
+  .weight-input{
+    width:100%;
+    font-size:28px;
+    font-weight:800;
+    text-align:center;
+    letter-spacing:.01em;
+    color:var(--accent);
+    border:1.5px solid var(--accent-soft);
+    background:#fffaf8;
+    padding:18px 14px;
+    border-radius:10px;
+  }
+  .weight-unit{
+    position:absolute;
+    right:18px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:13px;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .weight-hint{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:7px;
+    line-height:1.5;
+  }
+  .remark-input{
+    width:100%;
+    padding:13px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--paper);
+    font-size:16px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .remark-input::placeholder{ color:#a39d8f; font-weight:500; }
+  .remark-tag{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--amber);
+    background:var(--amber-soft);
+    padding:2px 7px;
+    border-radius:8px;
+    margin-top:3px;
+  }
+  .save-btn{
+    margin-top:auto;
+    padding:17px;
+    border:none;
+    border-radius:12px;
+    background:var(--ink);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:.01em;
+    cursor:pointer;
+  }
+  .save-btn:active{ transform:scale(.99); }
+  .save-secondary-btn{
+    margin-top:9px;
+    padding:13px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:transparent;
+    color:var(--ink);
+    font-size:13.5px;
+    font-weight:700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+  }
+  .save-secondary-btn:hover{ border-color:#c9b48a; background:var(--paper); }
+  .save-secondary-btn:active{ transform:scale(.99); }
+  .no-print-tag{
+    font-size:10px;
+    font-weight:700;
+    color:var(--muted);
+    background:var(--line);
+    padding:2px 7px;
+    border-radius:10px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .footnote{
+    text-align:center;
+    font-size:12px;
+    color:var(--muted);
+    margin-top:10px;
+    line-height:1.5;
+  }
+  .progress{ font-size:12px; color:var(--muted); font-weight:600; }
+  .progress b{ color:var(--ink); }
+  .progressbar{
+    height:5px;
+    background:var(--line);
+    border-radius:3px;
+    overflow:hidden;
+    margin-top:8px;
+  }
+  .progressbar .fill{
+    height:100%;
+    background:var(--good);
+    border-radius:3px;
+    transition: width .35s ease;
+    width:0%;
+  }
+
+  /* ---------- confirm ---------- */
+  .confirm{
+    align-items:center;
+    justify-content:center;
+    padding:40px 30px;
+    text-align:center;
+    gap:14px;
+  }
+  .check{
+    width:56px;height:56px;
+    border-radius:50%;
+    background:var(--good);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+  }
+  .check.no-print-icon{ background:var(--muted); }
+  .confirm h2{ margin:0; font-size:18px; }
+  .confirm p{ margin:0; color:var(--muted); font-size:14px; line-height:1.5; }
+  .confirm .roll{ font-weight:800; color:var(--ink); font-size:16px; }
+  .again-btn{
+    margin-top:18px;
+    padding:13px 22px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:transparent;
+    font-weight:700;
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+
+  /* ---------- summary ---------- */
+  .summary-body{ padding:22px; flex:1; display:flex; flex-direction:column; gap:16px; overflow-y:auto; }
+  .summary-head{ text-align:center; padding:6px 0 4px; }
+  .summary-head .big-check{
+    width:48px;height:48px;border-radius:50%;
+    background:var(--good); color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;margin:0 auto 12px;
+  }
+  .summary-head h2{ margin:0; font-size:19px; }
+  .summary-head p{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+  .stat-row{ display:flex; gap:10px; }
+  .stat{
+    flex:1;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    text-align:center;
+  }
+  .stat .num{ font-size:22px; font-weight:800; color:var(--ink); }
+  .stat .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700; margin-top:2px; }
+  .roll-table{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .roll-table .trow{
+    display:flex;
+    justify-content:space-between;
+    padding:11px 16px;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .roll-table .trow:last-child{ border-bottom:none; }
+  .roll-table .trow.head{
+    background:var(--paper);
+    font-weight:700;
+    color:var(--muted);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+  }
+  .roll-table .trow.pending{ color:var(--muted); }
+  .roll-table .trow .rno{ font-weight:700; }
+  .roll-table .trow .wt{ font-weight:700; color:var(--accent); }
+  .roll-table .trow .wt.pending-txt{ color:var(--muted); font-weight:600; font-style:italic; }
+  .roll-table .trow{ align-items:center; }
+  .edit-link{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    padding:2px 0;
+    text-decoration:underline;
+    text-decoration-color:var(--line);
+  }
+  .edit-link:hover{ color:var(--ink); }
+  .corrected-tag{
+    font-size:10px;
+    font-weight:700;
+    color:var(--amber);
+    background:var(--amber-soft);
+    padding:2px 6px;
+    border-radius:8px;
+    margin-left:6px;
+    vertical-align:1px;
+  }
+  .edit-banner{
+    background:var(--amber-soft);
+    border:1.5px solid #e6cfa0;
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:12.5px;
+    color:#7a5418;
+    font-weight:600;
+    display:none;
+  }
+  .edit-banner.show{ display:block; }
+  .done-btn{
+    margin-top:6px;
+    padding:17px;
+    border:none;
+    border-radius:12px;
+    background:var(--ink);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  /* ================= LOGIN SCREEN (minimal) ================= */
+  .login-screen{
+    display:none;
+    flex:1;
+    flex-direction:column;
+    min-height:100vh;
+    position:relative;
+    background:#faf7f1;
+    color:#2a2620;
+    align-items:center;
+    justify-content:center;
+  }
+  .login-screen.show{ display:flex; }
+
+  /* a single hairline accent in marigold/terracotta — restrained */
+  .login-accent-line{
+    position:absolute;
+    top:0; left:0; right:0;
+    height:3px;
+    background:linear-gradient(90deg, #b5642f, #c79a4a);
+  }
+
+  .login-inner{
+    width:100%;
+    max-width:340px;
+    margin:0 auto;
+    padding:40px 30px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
+
+  /* simple, elegant monogram mark — thin ring, no wheel */
+  .login-mark{
+    width:52px;height:52px;
+    border-radius:50%;
+    border:1.5px solid #c79a4a;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:22px;
+    position:relative;
+  }
+  .login-mark::after{
+    content:"";
+    width:7px;height:7px;
+    border-radius:50%;
+    background:#b5642f;
+  }
+
+  .brand-name{
+    font-family:Georgia, "Times New Roman", serif;
+    font-size:23px;
+    font-weight:600;
+    letter-spacing:.005em;
+    color:#2a2620;
+    margin:0;
+  }
+  .brand-sub{
+    font-size:10.5px;
+    letter-spacing:.34em;
+    text-transform:uppercase;
+    color:#a07d3e;
+    margin:8px 0 0;
+    font-weight:600;
+  }
+  .brand-divider{
+    width:34px;
+    height:1px;
+    background:#e0d6c4;
+    margin:22px 0;
+  }
+  .login-title{
+    font-size:12.5px;
+    color:#8a8273;
+    margin:0 0 20px;
+    font-weight:500;
+    letter-spacing:.03em;
+  }
+
+  .login-form{ width:100%; display:flex; flex-direction:column; gap:14px; }
+  .login-field{ text-align:left; }
+  .login-field label{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.11em;
+    color:#9a917f;
+    font-weight:700;
+    display:block;
+    margin-bottom:6px;
+  }
+  .login-input{
+    width:100%;
+    padding:12px 2px;
+    border:none;
+    border-bottom:1.5px solid #ddd3c2;
+    background:transparent;
+    color:#2a2620;
+    font-size:16px;
+    font-weight:600;
+    outline:none;
+    border-radius:0;
+  }
+  .login-input:focus{ border-bottom-color:#b5642f; }
+  .login-input::placeholder{ color:#b8af9e; font-weight:500; }
+
+  .login-btn{
+    margin-top:14px;
+    padding:14px;
+    border:none;
+    border-radius:8px;
+    background:#2a2620;
+    color:#f7f1e6;
+    font-size:14.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .login-btn:hover{ background:#3a342b; }
+  .login-btn:active{ transform:scale(.99); }
+
+  .login-error{
+    background:#f7e9e4;
+    border:1px solid #e6c3b6;
+    color:#9a3f25;
+    font-size:12px;
+    font-weight:600;
+    padding:9px 12px;
+    border-radius:7px;
+    margin-top:2px;
+    display:none;
+    text-align:center;
+  }
+  .login-error.show{ display:block; }
+
+  .login-hint{
+    margin-top:22px;
+    font-size:10.5px;
+    color:#a89f8d;
+    line-height:1.6;
+  }
+  .login-foot{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    text-align:center;
+    font-size:9.5px;
+    letter-spacing:.14em;
+    color:#b3aa98;
+    padding:16px;
+  }
+
+  /* ============ active user chip on dashboard ============ */
+  /* ============ Brand title (centered) ============ */
+  .brand-title-row{
+    text-align:center;
+    font-family:Georgia, "Times New Roman", serif;
+    font-size:17px;
+    font-weight:700;
+    color:var(--ink);
+    letter-spacing:.01em;
+  }
+
+  /* ============ User chip + popover ============ */
+  .user-chip-wrap{
+    position:relative;
+  }
+  .user-chip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:none;
+    border:1.5px solid var(--line);
+    border-radius:30px;
+    padding:6px 12px 6px 6px;
+    cursor:pointer;
+  }
+  .user-chip:hover{ border-color:#c9b48a; background:var(--paper); }
+  .user-avatar{
+    width:28px;height:28px;
+    border-radius:50%;
+    background:#2a2620;
+    color:#f0e6d2;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    font-size:12px;
+    flex-shrink:0;
+  }
+  .user-chip .uname{ font-size:13.5px; font-weight:800; color:var(--ink); }
+  .chip-chev{ font-size:9px; color:var(--muted); margin-left:1px; }
+
+  .user-popover{
+    display:none;
+    position:absolute;
+    top:calc(100% + 8px);
+    right:0;
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    box-shadow:0 12px 30px -10px rgba(28,34,48,.2);
+    padding:12px;
+    min-width:180px;
+    z-index:30;
+    text-align:left;
+  }
+  .user-popover.show{ display:block; }
+  .popover-greet{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .popover-greet b{ color:var(--ink); font-weight:800; }
+  .logout-btn{
+    width:100%;
+    background:none;
+    border:1.5px solid var(--line);
+    color:var(--muted);
+    font-size:12.5px;
+    font-weight:700;
+    padding:9px 12px;
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .logout-btn:hover{ color:var(--accent); border-color:var(--accent-soft); }
+
+  .weighed-by-tag{
+    font-size:10.5px;
+    color:var(--muted);
+    font-weight:600;
+    margin-top:3px;
+    display:block;
+  }
+  .weighed-by-tag b{ color:var(--ink); font-weight:700; }
+  .weighed-at-tag{
+    font-size:10.5px;
+    color:var(--muted);
+    font-weight:500;
+    margin-top:2px;
+    display:block;
+  }
+  .lot-created-by-row{
+    font-size:12.5px;
+    color:var(--muted);
+    font-weight:600;
+    margin-top:4px;
+  }
+
+  /* ============ New Lot button + title row ============ */
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:14px;
+  }
+  .new-lot-btn{
+    border:1.5px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:700;
+    padding:9px 14px;
+    border-radius:9px;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .new-lot-btn:hover{ background:#3a342b; }
+
+  /* ============ New Lot screen ============ */
+  .newlot-body{
+    padding:18px 22px 30px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    overflow-y:auto;
+  }
+  .nl-field{ display:flex; flex-direction:column; gap:7px; }
+  .nl-input, .nl-select{
+    width:100%;
+    padding:13px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--paper);
+    font-size:16px;
+    font-weight:600;
+    color:var(--ink);
+    appearance:none;
+  }
+  .nl-select{
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9'><path d='M1 1l6 6 6-6' stroke='%237a7468' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 14px center;
+    padding-right:36px;
+  }
+  .lot-prefix-row{
+    display:flex;
+    align-items:center;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:var(--paper);
+    overflow:hidden;
+  }
+  .lot-prefix{
+    padding:13px 0 13px 14px;
+    font-weight:800;
+    color:var(--muted);
+    font-size:15px;
+  }
+  .lot-suffix-input{
+    border:none;
+    background:transparent;
+    padding:13px 14px 13px 2px;
+    font-size:16px;
+    font-weight:700;
+    color:var(--ink);
+    flex:1;
+  }
+  .newlot-error{
+    background:#f7e9e4;
+    border:1.5px solid #e6c3b6;
+    color:#9a3f25;
+    font-size:12.5px;
+    font-weight:600;
+    padding:11px 13px;
+    border-radius:9px;
+    display:none;
+  }
+  .newlot-error.show{ display:block; }
+  .newlot-success{
+    background:var(--good-soft);
+    border:1.5px solid #bcd9c9;
+    color:var(--good);
+    font-size:12.5px;
+    font-weight:600;
+    padding:11px 13px;
+    border-radius:9px;
+  }
+
+  .upload-rule-box{
+    background:var(--amber-soft);
+    border:1.5px solid #e6cfa0;
+    color:#7a5418;
+    font-size:12.5px;
+    font-weight:600;
+    padding:11px 13px;
+    border-radius:9px;
+    line-height:1.5;
+  }
+  .columns-chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .col-chip{
+    font-size:11px;
+    font-weight:700;
+    background:var(--paper);
+    border:1.5px solid var(--line);
+    color:var(--ink);
+    padding:5px 10px;
+    border-radius:20px;
+  }
+  .col-chip.muted{ color:var(--muted); font-weight:600; }
+
+  .dropzone{
+    border:2px dashed var(--line);
+    border-radius:14px;
+    padding:34px 18px;
+    text-align:center;
+    cursor:pointer;
+    background:var(--paper);
+  }
+  .dropzone:hover{ border-color:#c9b48a; background:#f1ece1; }
+  .dropzone-icon{
+    width:40px;height:40px;
+    border-radius:50%;
+    background:var(--card);
+    border:1.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 12px;
+    font-size:16px;
+    color:var(--muted);
+  }
+  .dropzone-title{ font-size:14px; font-weight:700; color:var(--ink); }
+  .dropzone-sub{ font-size:11.5px; color:var(--muted); margin-top:4px; }
+
+  .file-preview{
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    background:var(--card);
+  }
+  .file-preview-name{ font-weight:700; font-size:13.5px; color:var(--ink); }
+  .file-preview-summary{ font-size:12px; color:var(--muted); margin-top:5px; line-height:1.6; }
+
+  /* ============ Segments (manual entry) ============ */
+  .segments-header{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    margin-top:4px;
+  }
+  .segment-card{
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    background:var(--paper);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .segment-card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .segment-title{
+    font-size:12px;
+    font-weight:800;
+    color:var(--ink);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .segment-range-pill{
+    font-size:11.5px;
+    font-weight:700;
+    background:var(--good-soft);
+    color:var(--good);
+    padding:3px 9px;
+    border-radius:20px;
+  }
+  .segment-range-pill.empty{
+    background:var(--line);
+    color:var(--muted);
+  }
+  .remove-segment-btn{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .remove-segment-btn:hover{ color:var(--red); }
+  .segment-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .segment-row .nl-input, .segment-row .nl-select{
+    padding:11px 11px;
+    font-size:16px;
+    background:var(--card);
+  }
+  .segment-row .nl-select{
+    padding-right:30px;
+    background-position:right 11px center;
+  }
+  .segment-mini-label{
+    font-size:9.5px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    font-weight:700;
+    margin-bottom:4px;
+    display:block;
+  }
+  .export-btn{
+    border:1.5px solid #714B67;
+    background:#714B67;
+    color:#fff;
+    font-weight:700;
+    font-size:13.5px;
+    padding:13px;
+    border-radius:10px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    box-shadow:0 6px 16px -8px rgba(113,75,103,.55);
+  }
+  .export-btn:hover{ background:#5e3d55; }
+  .export-btn:active{ transform:scale(.99); }
+  .export-btn .odoo-mark{
+    width:16px;height:16px;
+    border-radius:4px;
+    background:#fff;
+    color:#714B67;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;
+    font-weight:900;
+    flex-shrink:0;
+  }
+
+  /* ============ Search (black-toned) ============ */
+  .search-row{
+    padding:16px 22px 14px;
+  }
+  .search-input-wrap{
+    position:relative;
+  }
+  .search-input{
+    width:100%;
+    padding:13px 38px 13px 38px;
+    border-radius:11px;
+    border:1.5px solid #3a3428;
+    background:#2a2620;
+    font-size:16px;
+    font-weight:600;
+    color:#f0e9dc;
+    letter-spacing:.01em;
+    box-shadow:0 1px 2px rgba(0,0,0,.04);
+  }
+  .search-input::placeholder{ color:#8c8475; font-weight:500; }
+  .search-input:focus{ border-color:#5a5344; background:#332e26; }
+  .search-icon{
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#8c8475;
+    pointer-events:none;
+  }
+  .search-clear{
+    position:absolute;
+    right:11px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:none;
+    color:#a89f8d;
+    font-size:16px;
+    cursor:pointer;
+    padding:4px;
+    display:none;
+    line-height:1;
+  }
+  .search-clear:hover{ color:#fff; }
+  .search-clear.show{ display:block; }
+
+  /* ============ Priority / urgent lots ============ */
+  .lot-card.priority{
+    border-color:var(--priority-red);
+    background:linear-gradient(135deg, #ffffff 0%, var(--priority-red-soft) 130%);
+    box-shadow:0 0 0 1.5px var(--priority-red-soft);
+  }
+  .priority-row{
+    display:flex;
+    margin-bottom:8px;
+  }
+  .priority-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:#fff;
+    background:var(--priority-red);
+    padding:4px 9px 4px 7px;
+    border-radius:20px;
+    white-space:nowrap;
+    box-shadow:0 1px 3px rgba(200,30,59,.35);
+  }
+  .priority-badge svg{ flex-shrink:0; }
+  .priority-toggle-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:30px; height:30px;
+    border-radius:9px;
+    border:1.5px solid var(--line);
+    background:var(--card);
+    color:var(--muted);
+    cursor:pointer;
+    flex-shrink:0;
+    padding:0;
+  }
+  .priority-toggle-btn:hover{ border-color:var(--priority-red); color:var(--priority-red); }
+  .priority-toggle-btn.active{
+    background:var(--priority-red);
+    border-color:var(--priority-red);
+    color:#fff;
+  }
+  .edit-lot-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:30px; height:30px;
+    border-radius:9px;
+    border:1.5px solid var(--line);
+    background:var(--card);
+    color:var(--muted);
+    cursor:pointer;
+    flex-shrink:0;
+    padding:0;
+  }
+  .edit-lot-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .lot-card-top-actions{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+  }
+
+  /* ============ Owner note / instructions box ============ */
+  .owner-note-box{
+    margin:0 22px 14px;
+    padding:12px 14px;
+    border-radius:12px;
+    background:var(--amber-soft);
+    border:1.5px solid #e6cf9f;
+    border-left:4px solid var(--amber);
+  }
+  .owner-note-header{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .owner-note-header svg{ color:var(--amber); flex-shrink:0; }
+  .owner-note-label{
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--amber);
+    flex:1;
+  }
+  .owner-note-edit-btn{
+    border:none;
+    background:none;
+    color:var(--amber);
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .owner-note-edit-btn:hover{ text-decoration:underline; }
+  .owner-note-text{
+    margin-top:5px;
+    font-size:13.5px;
+    font-weight:600;
+    color:#5c4b22;
+    line-height:1.4;
+    white-space:pre-wrap;
+  }
+  .owner-note-edit-area{ margin-top:8px; }
+  .owner-note-edit-area textarea{
+    width:100%;
+    min-height:64px;
+    padding:9px 11px;
+    border-radius:9px;
+    border:1.5px solid #e6cf9f;
+    font-size:16px;
+    font-weight:600;
+    font-family:inherit;
+    color:var(--ink);
+    resize:vertical;
+    background:#fffdf8;
+  }
+  .owner-note-edit-actions{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+  }
+  .owner-note-save-btn, .owner-note-cancel-btn{
+    flex:1;
+    padding:8px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    border:1.5px solid var(--line);
+  }
+  .owner-note-save-btn{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .owner-note-cancel-btn{ background:var(--card); color:var(--muted); }
+
+  /* ============ CSV export modal ============ */
+  .csv-modal-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(20,17,12,.55);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .csv-modal-backdrop.show{ display:flex; }
+  .csv-modal{
+    background:var(--card);
+    border-radius:16px;
+    width:100%;
+    max-width:380px;
+    max-height:88vh;
+    display:flex;
+    flex-direction:column;
+    padding:20px;
+    gap:12px;
+  }
+  .csv-modal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .csv-modal-title{ font-size:15px; font-weight:800; color:var(--ink); }
+  .csv-modal-filename{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:2px; word-break:break-all; }
+  .csv-modal-close{
+    background:none; border:none; font-size:22px; color:var(--muted); cursor:pointer;
+    line-height:1; padding:0 2px;
+  }
+  .csv-modal-note{ font-size:12px; color:var(--muted); line-height:1.5; }
+  .csv-modal-textarea{
+    width:100%;
+    flex:1;
+    min-height:220px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:12px;
+    font-family:"SF Mono", Menlo, Consolas, monospace;
+    font-size:12.5px;
+    line-height:1.6;
+    color:var(--ink);
+    background:var(--paper);
+    resize:none;
+    white-space:pre;
+    overflow-x:auto;
+    overflow-wrap:normal;
+  }
+  .csv-modal-actions{ display:flex; gap:8px; }
+  .csv-modal-btn{
+    flex:1;
+    padding:12px;
+    border-radius:9px;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .csv-modal-btn.secondary{ border:1.5px solid var(--line); background:transparent; color:var(--ink); }
+  .csv-modal-btn.primary{ border:1.5px solid #714B67; background:#714B67; color:#fff; }
+  .csv-modal-btn.primary:hover{ background:#5e3d55; }
+
+  .add-segment-btn{
+    border:1.5px dashed var(--line);
+    background:transparent;
+    color:var(--ink);
+    font-weight:700;
+    font-size:13px;
+    padding:12px;
+    border-radius:10px;
+    cursor:pointer;
+  }
+  .add-segment-btn:hover{ border-color:#c9b48a; background:var(--paper); }
+  .segment-progress{
+    text-align:center;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--muted);
+    padding:10px;
+    border-radius:9px;
+    background:var(--paper);
+    border:1.5px solid var(--line);
+  }
+  .segment-progress.match{
+    background:var(--good-soft);
+    color:var(--good);
+    border-color:#bcd9c9;
+  }
+  .segment-progress.over{
+    background:#f7e9e4;
+    color:#9a3f25;
+    border-color:#e6c3b6;
+  }
+
+  /* ================= OWNER HOME (Command Center) ================= */
+  .secondary-btn{
+    background:transparent;
+    color:var(--ink);
+    border:1.5px solid var(--line);
+  }
+  .secondary-btn:hover{ background:var(--paper); }
+
+  .owner-clock-row{
+    margin-top:12px;
+    font-size:11.5px;
+    color:var(--muted);
+    font-weight:600;
+    letter-spacing:.03em;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .live-sync-dot{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    color:var(--good);
+    font-weight:700;
+    text-transform:uppercase;
+    font-size:10px;
+    letter-spacing:.05em;
+  }
+  .live-sync-pulse{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--good);
+    animation:livePulse 1.8s infinite;
+  }
+  .dark-mode-toggle{
+    margin-left:auto;
+    background:none;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    width:26px; height:26px;
+    font-size:13px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:0;
+  }
+  .dark-mode-toggle:hover{ border-color:#c9b48a; }
+
+  /* ---- Activity ticker ---- */
+  .activity-ticker{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--card);
+  }
+  .activity-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:9px 14px;
+    border-bottom:1px solid var(--line);
+    font-size:12.5px;
+  }
+  .activity-row:last-child{ border-bottom:none; }
+  .activity-dot{
+    width:5px;height:5px;border-radius:50%;
+    background:var(--amber);
+    flex-shrink:0;
+  }
+  .activity-text{ color:var(--ink); font-weight:600; flex:1; }
+  .activity-time{ color:var(--muted); font-size:11px; font-weight:600; flex-shrink:0; }
+
+  /* ---- Pulsing "hot" active-lot card ---- */
+  .live-lot-card.pulse{
+    border-color:var(--good);
+    box-shadow:0 0 0 0 rgba(60,110,82,.4);
+    animation:cardPulse 2.2s infinite;
+  }
+  @keyframes cardPulse{
+    0%{ box-shadow:0 0 0 0 rgba(60,110,82,.35); }
+    70%{ box-shadow:0 0 0 8px rgba(60,110,82,0); }
+    100%{ box-shadow:0 0 0 0 rgba(60,110,82,0); }
+  }
+
+  /* ---- Pace gauge ---- */
+  .pace-gauge-row{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+    background:var(--card);
+  }
+  .pace-gauge{ position:relative; flex-shrink:0; }
+  .pace-gauge-label{
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .pace-gauge-num{ font-size:22px; font-weight:800; color:var(--ink); }
+  .pace-gauge-sub{ font-size:9.5px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .pace-gauge-detail{ display:flex; flex-direction:column; gap:4px; }
+  .pace-gauge-pct{ font-size:15px; font-weight:800; color:var(--ink); }
+  .pace-gauge-baseline{ font-size:12px; color:var(--muted); font-weight:600; }
+
+  /* ---- Trend chart ---- */
+  .trend-chart-wrap{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:16px 14px 10px;
+    background:var(--card);
+  }
+  .trend-bars{
+    display:flex;
+    align-items:flex-end;
+    gap:4px;
+    height:70px;
+  }
+  .trend-bar-col{ flex:1; display:flex; align-items:flex-end; height:100%; }
+  .trend-bar{
+    width:100%;
+    background:var(--line);
+    border-radius:3px 3px 0 0;
+    min-height:3px;
+    transition:height .3s ease;
+  }
+  .trend-bar.today{ background:var(--amber); }
+
+  /* ---- Leaderboard ---- */
+  .leaderboard-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  /* ---- Heatmap ---- */
+  .heatmap-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+  }
+  .heatmap-cell{
+    border-radius:10px;
+    padding:12px 10px;
+    text-align:center;
+    border:1px solid var(--line);
+  }
+  .heatmap-count{ font-size:17px; font-weight:800; color:var(--ink); }
+  .heatmap-label{ font-size:10px; color:var(--ink); font-weight:600; margin-top:3px; line-height:1.3; }
+
+  /* ---- Dark mode (owner board only) ---- */
+  body.owner-dark-mode #ownerHomeScreen{
+    background:#1a1d24;
+  }
+  body.owner-dark-mode #ownerHomeScreen .board-section-title,
+  body.owner-dark-mode #ownerHomeScreen .live-lot-name,
+  body.owner-dark-mode #ownerHomeScreen .board-stat-num,
+  body.owner-dark-mode #ownerHomeScreen .activity-text,
+  body.owner-dark-mode #ownerHomeScreen .pace-gauge-num,
+  body.owner-dark-mode #ownerHomeScreen .pace-gauge-pct,
+  body.owner-dark-mode #ownerHomeScreen .rank-name,
+  body.owner-dark-mode #ownerHomeScreen .heatmap-count,
+  body.owner-dark-mode #ownerHomeScreen .heatmap-label,
+  body.owner-dark-mode #ownerHomeScreen .brand-title-row{
+    color:#f0ece2;
+  }
+  body.owner-dark-mode #ownerHomeScreen .live-lot-card,
+  body.owner-dark-mode #ownerHomeScreen .activity-ticker,
+  body.owner-dark-mode #ownerHomeScreen .pace-gauge-row,
+  body.owner-dark-mode #ownerHomeScreen .trend-chart-wrap,
+  body.owner-dark-mode #ownerHomeScreen .board-stat-card{
+    background:#252932;
+    border-color:#3a3f4a;
+  }
+  body.owner-dark-mode #ownerHomeScreen .activity-row{
+    border-color:#3a3f4a;
+  }
+
+  /* ---- Context strip ---- */
+  .context-strip{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+    font-style:italic;
+    padding:2px 0 0;
+  }
+
+  /* ---- Voice button ---- */
+  .voice-btn{
+    background:none;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    width:26px; height:26px;
+    font-size:12px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:0;
+  }
+  .voice-btn:hover{ border-color:#c9b48a; }
+
+  /* ---- AI summary box ---- */
+  .ai-summary-box{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:14px 16px;
+    background:linear-gradient(135deg, var(--card), #fdf8ee);
+    font-size:13px;
+    line-height:1.6;
+    color:var(--ink);
+    font-weight:500;
+  }
+
+  /* ---- Achievements ---- */
+  .achievements-row{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    padding-bottom:2px;
+  }
+  .achievement-badge{
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:12px 14px;
+    min-width:88px;
+    text-align:center;
+  }
+  .achievement-badge.earned{ border-color:var(--amber); background:#fdf6ea; }
+  .achievement-badge.locked{ opacity:.4; }
+  .achievement-icon{ font-size:22px; }
+  .achievement-label{ font-size:10px; font-weight:700; color:var(--ink); line-height:1.3; }
+
+  /* ---- Factory floor mini-map ---- */
+  .floor-map{
+    position:relative;
+    height:160px;
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0/20px 20px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/20px 20px,
+      var(--card);
+    background-color:var(--card);
+    overflow:hidden;
+  }
+  .floor-node{
+    position:absolute;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    cursor:pointer;
+    transform:translate(-50%,-50%);
+  }
+  .floor-node-dot{
+    width:14px;height:14px;border-radius:50%;
+    background:var(--line);
+    border:2px solid var(--muted);
+  }
+  .floor-node.hot .floor-node-dot{
+    background:var(--good);
+    border-color:var(--good);
+    box-shadow:0 0 0 0 rgba(60,110,82,.5);
+    animation:livePulse 1.6s infinite;
+  }
+  .floor-node-label{ font-size:9px; font-weight:700; color:var(--ink); white-space:nowrap; }
+
+  /* ---- Ambient particle background ---- */
+  .ambient-particles{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:0;
+  }
+  .ambient-dot{
+    position:absolute;
+    width:3px; height:3px;
+    border-radius:50%;
+    background:rgba(169,118,43,0.25);
+    animation:floatDot linear infinite;
+  }
+  @keyframes floatDot{
+    0%{ transform:translateY(0) translateX(0); opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    100%{ transform:translateY(-40px) translateX(10px); opacity:0; }
+  }
+
+  /* ---- Confetti canvas ---- */
+  .confetti-canvas{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:9999;
+    display:none;
+  }
+
+  /* ---- TV Mode ---- */
+  .tv-mode-overlay{
+    position:fixed;
+    inset:0;
+    background:#14171d;
+    z-index:9000;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+  }
+  .tv-mode-overlay.show{ display:flex; }
+  .tv-mode-exit{
+    position:absolute;
+    top:24px; right:24px;
+    background:rgba(255,255,255,0.1);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .tv-mode-slides{ width:100%; max-width:600px; position:relative; min-height:260px; }
+  .tv-slide{
+    display:none;
+    color:#fff;
+    text-align:center;
+    animation:fadeIn .5s ease;
+  }
+  .tv-slide.active{ display:block; }
+  @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+  .tv-slide-title{
+    font-size:13px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:#c9b48a;
+    margin-bottom:18px;
+  }
+  .tv-slide-body{ font-size:22px; }
+  .tv-slide-body .board-stat-card,
+  .tv-slide-body .live-lot-card,
+  .tv-slide-body .rank-row,
+  .tv-slide-body .heatmap-cell{
+    background:rgba(255,255,255,0.06);
+    border-color:rgba(255,255,255,0.15);
+    color:#fff;
+  }
+  .tv-slide-body .board-stat-num,
+  .tv-slide-body .live-lot-name,
+  .tv-slide-body .rank-name,
+  .tv-slide-body .heatmap-count,
+  .tv-slide-body .heatmap-label,
+  .tv-slide-body .live-lot-sub,
+  .tv-slide-body .live-lot-pct,
+  .tv-slide-body .live-lot-time,
+  .tv-slide-body .board-stat-lbl,
+  .tv-slide-body .rank-sub{
+    color:#fff;
+  }
+  .tv-mode-dots{ display:flex; gap:8px; margin-top:24px; }
+  .tv-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:rgba(255,255,255,0.25);
+  }
+  .tv-dot.active{ background:#c9b48a; }
+
+  /* ---- Worker Duties: owner-side list ---- */
+  .worker-duties-list{ display:flex; flex-direction:column; gap:8px; }
+  .worker-duty-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:11px 14px;
+    background:var(--card);
+  }
+  .worker-duty-name{ font-size:14px; font-weight:800; color:var(--ink); }
+  .worker-duty-sub{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:2px; }
+  .worker-duty-edit-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:7px 12px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+
+  /* ---- Duties editor modal ---- */
+  .duties-modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(20,20,20,0.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9500;
+    padding:20px;
+  }
+  .duties-modal-backdrop.show{ display:flex; }
+  .duties-modal{
+    background:var(--card);
+    border-radius:16px;
+    width:100%;
+    max-width:380px;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:18px;
+  }
+  .duties-modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:15px;
+    font-weight:800;
+    color:var(--ink);
+    margin-bottom:14px;
+  }
+  .duties-modal-close{ background:none; border:none; font-size:20px; cursor:pointer; color:var(--muted); }
+  .duties-modal-body textarea{
+    width:100%;
+    min-height:60px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:9px 11px;
+    font-size:14px;
+    font-family:inherit;
+    resize:vertical;
+    margin-top:6px;
+  }
+  .duties-modal-task-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:7px 0;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .duties-modal-task-row label{ display:flex; align-items:center; gap:8px; }
+  .duties-modal-task-remove{ background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; }
+  .duties-add-task-row{ display:flex; gap:8px; margin-top:10px; }
+  .duties-add-task-row input{
+    flex:1;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    padding:8px 10px;
+    font-size:13.5px;
+    font-family:inherit;
+  }
+  .duties-add-task-row button{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:9px;
+    padding:8px 13px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .duties-modal-actions{ margin-top:16px; }
+
+  /* ---- My Duties box (worker dashboard) ---- */
+  .my-duties-box{
+    border:1.5px solid var(--amber);
+    border-radius:14px;
+    padding:13px 15px;
+    background:#fdf6ea;
+  }
+  .my-duties-label{ font-size:12px; font-weight:800; color:var(--amber); text-transform:uppercase; letter-spacing:.04em; }
+  .my-duties-note{ font-size:13.5px; color:var(--ink); font-weight:600; margin-top:8px; line-height:1.5; }
+  .my-duties-tasks{ margin-top:10px; display:flex; flex-direction:column; gap:7px; }
+  .my-duty-task{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13.5px;
+    color:var(--ink);
+    font-weight:600;
+    cursor:pointer;
+  }
+  .my-duty-task input{ width:17px; height:17px; flex-shrink:0; }
+  .my-duty-task.done span{ text-decoration:line-through; color:var(--muted); }
+
+  /* ---- Daily tally ---- */
+  .daily-tally-row{
+    display:none;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--ink);
+    font-weight:600;
+    padding:8px 2px;
+  }
+  .daily-tally-icon{ font-size:15px; }
+
+  /* ---- My recent lots ---- */
+  .my-recent-lots{ display:none; }
+  .my-recent-lots-label{ font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:7px; }
+  .my-recent-lots-row{ display:flex; gap:8px; overflow-x:auto; }
+  .my-recent-lot-chip{
+    flex-shrink:0;
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:20px;
+    padding:7px 13px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .my-recent-lot-chip:hover{ border-color:#c9b48a; }
+
+  /* ---- Repeat-weight button ---- */
+  .repeat-weight-btn{
+    display:none;
+    margin-top:9px;
+    width:100%;
+    background:var(--paper);
+    border:1.5px dashed var(--line);
+    border-radius:10px;
+    padding:10px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .repeat-weight-btn:hover{ border-color:#c9b48a; }
+
+  /* ---- Hands-free voice mode ---- */
+  .handsfree-toggle-btn{
+    width:100%;
+    background:linear-gradient(135deg, var(--ink), #2d3548);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:13px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    margin-bottom:4px;
+  }
+  .handsfree-status{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--ink);
+    color:#fff;
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:4px;
+  }
+  .handsfree-status-dot{
+    width:9px; height:9px; border-radius:50%;
+    background:#5fb98a;
+    animation:livePulse 1.4s infinite;
+    flex-shrink:0;
+  }
+  .handsfree-status-text{ flex:1; font-size:13px; font-weight:700; }
+  .handsfree-exit-btn{
+    background:rgba(255,255,255,0.15);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .handsfree-status.unsupported{ background:#9a3324; }
+  .handsfree-status.unsupported .handsfree-status-dot{
+    background:#fff;
+    animation:none;
+  }
+
+  /* ---- Quick remark chips ---- */
+  .remark-chip-row{ display:flex; gap:7px; margin-top:9px; flex-wrap:wrap; }
+  .remark-chip{
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:20px;
+    padding:6px 12px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .remark-chip.active{ background:var(--amber); border-color:var(--amber); color:#fff; }
+
+  /* ---- Offline banner ---- */
+  .offline-banner{
+    display:none;
+    background:#fdecea;
+    color:#9a2a1f;
+    font-size:12px;
+    font-weight:700;
+    text-align:center;
+    padding:8px;
+    border-radius:9px;
+    margin-top:10px;
+  }
+  .offline-banner.show{ display:block; }
+
+  /* ---- Milestone toast ---- */
+  .milestone-toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:#fff;
+    padding:13px 20px;
+    border-radius:14px;
+    font-size:14px;
+    font-weight:700;
+    opacity:0;
+    transition:opacity .3s, transform .3s;
+    z-index:9700;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  .milestone-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---- End-of-shift summary ---- */
+  .shift-summary-overlay{
+    position:fixed; inset:0;
+    background:rgba(20,20,20,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9600;
+    padding:20px;
+  }
+  .shift-summary-overlay.show{ display:flex; }
+  .shift-summary-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:26px 22px;
+    width:100%;
+    max-width:340px;
+    text-align:center;
+  }
+  .shift-summary-title{ font-size:18px; font-weight:800; color:var(--ink); margin-bottom:18px; }
+  .shift-summary-stats{ display:flex; justify-content:space-around; margin-bottom:20px; }
+  .shift-stat .num{ font-size:24px; font-weight:800; color:var(--ink); }
+  .shift-stat .lbl{ font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-top:3px; }
+
+  /* ---- Larger text mode (worker accessibility) ---- */
+  body.large-text-mode #dashboardScreen,
+  body.large-text-mode #entryScreen{
+    font-size:1.18em;
+  }
+  body.large-text-mode .weight-input{ font-size:2.6em !important; }
+  body.large-text-mode .save-btn,
+  body.large-text-mode .save-secondary-btn{
+    padding:18px !important;
+    font-size:1.15em !important;
+  }
+
+  /* ---- Glove-friendly larger touch targets on the weighing screen ---- */
+  #entryScreen .save-btn,
+  #entryScreen .save-secondary-btn{
+    min-height:54px;
+  }
+  #entryScreen .remark-chip,
+  #entryScreen .repeat-weight-btn{
+    min-height:40px;
+  }
+
+  .owner-board{
+    padding:18px 22px 28px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+    flex:1;
+    overflow-y:auto;
+    position:relative;
+    z-index:1;
+  }
+  .board-section{ display:flex; flex-direction:column; gap:10px; }
+  .board-section-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .board-section-title{
+    font-size:12px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink);
+  }
+  .live-dot-label{
+    font-size:11px;
+    font-weight:700;
+    color:var(--good);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .live-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--good);
+    box-shadow:0 0 0 0 rgba(60,110,82,.6);
+    animation:livePulse 1.8s infinite;
+  }
+  @keyframes livePulse{
+    0%{ box-shadow:0 0 0 0 rgba(60,110,82,.5); }
+    70%{ box-shadow:0 0 0 6px rgba(60,110,82,0); }
+    100%{ box-shadow:0 0 0 0 rgba(60,110,82,0); }
+  }
+
+  .live-lot-row{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .live-lot-card{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    cursor:pointer;
+    background:var(--card);
+  }
+  .live-lot-card:hover{ border-color:#c9b48a; }
+  .live-lot-left{ display:flex; flex-direction:column; gap:3px; }
+  .live-lot-name{ font-size:15px; font-weight:800; color:var(--ink); }
+  .live-lot-sub{ font-size:12px; color:var(--muted); font-weight:600; }
+  .live-lot-right{ text-align:right; display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+  .live-lot-pct{ font-size:18px; font-weight:800; color:var(--good); }
+  .live-lot-time{ font-size:10.5px; color:var(--muted); font-weight:600; }
+
+  .board-stat-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+  }
+  .board-stat-card{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+    background:var(--card);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .board-stat-num{ font-size:26px; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
+  .board-stat-lbl{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .board-stat-sub{ font-size:11px; color:var(--accent); font-weight:700; margin-top:2px; }
+
+  .board-two-col{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+  }
+  .rank-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .rank-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:11px 14px;
+    border:1.5px solid var(--line);
+    border-radius:11px;
+    background:var(--card);
+  }
+  .rank-left{ display:flex; align-items:center; gap:9px; }
+  .rank-badge{
+    width:22px; height:22px;
+    border-radius:50%;
+    background:var(--paper);
+    border:1.5px solid var(--line);
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:800;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .rank-name{ font-size:13.5px; font-weight:700; color:var(--ink); }
+  .rank-value{ font-size:13px; font-weight:800; color:var(--accent); }
+  .rank-sub{ font-size:11px; color:var(--muted); font-weight:600; }
+
+  .empty-board-note{
+    font-size:12.5px;
+    color:var(--muted);
+    text-align:center;
+    padding:18px;
+    border:1.5px dashed var(--line);
+    border-radius:12px;
+  }
+
+  /* ============ Lot detail (owner drill-in) ============ */
+  .detail-meta-list{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .detail-meta-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:13px 16px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  .detail-meta-row:last-child{ border-bottom:none; }
+  .detail-meta-row .k{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--muted);
+    font-weight:700;
+  }
+  .detail-meta-row .v{ font-size:14px; font-weight:700; color:var(--ink); }
+
+  /* ============ Manage Users ============ */
+  .user-row-card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:13px 14px;
+    margin-bottom:10px;
+    background:var(--card);
+  }
+  .user-row-left{ display:flex; align-items:center; gap:10px; }
+  .user-row-meta{ display:flex; flex-direction:column; gap:2px; }
+  .user-row-name{ font-size:14px; font-weight:800; color:var(--ink); }
+  .user-row-role{
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    padding:2px 7px;
+    border-radius:8px;
+    width:fit-content;
+  }
+  .user-row-role.owner{ background:var(--amber-soft); color:var(--amber); }
+  .user-row-role.worker{ background:var(--good-soft); color:var(--good); }
+  .user-row-actions{ display:flex; gap:6px; }
+  .user-action-btn{
+    border:1.5px solid var(--line);
+    background:transparent;
+    color:var(--ink);
+    font-size:11.5px;
+    font-weight:700;
+    padding:7px 10px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .user-action-btn:hover{ background:var(--paper); }
+  .user-action-btn.danger{ color:var(--red); border-color:var(--red-soft); }
+  .user-action-btn.danger:hover{ background:var(--red-soft); }
+
+  .add-user-card{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+    background:var(--paper);
+    margin-top:6px;
+  }
+
+  .inline-edit-row{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+  }
+  .inline-edit-row input{
+    flex:1;
+    padding:9px 11px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    font-size:14px;
+    font-weight:600;
+  }
+
+  /* ================= RESPONSIVE (placed last so it reliably overrides
+     every base rule above, regardless of selector order elsewhere) ================= */
+
+  /* Tablet (iPad portrait and similar, ~600–1023px): give the card real
+     presence instead of a narrow phone strip floating in empty space. */
+  @media (min-width: 600px){
+    body{ padding:32px 24px; align-items:flex-start; }
+    .phone{
+      width:100%;
+      max-width:600px;
+      margin:0 auto;
+      min-height:auto;
+      border-radius:18px;
+      border:1px solid var(--line);
+      box-shadow:0 16px 44px -22px rgba(28,34,48,.16), 0 2px 8px rgba(28,34,48,.05);
+      overflow:hidden;
+    }
+    .lot-list{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      align-content:start;
+    }
+    .body{ max-width:480px; margin:0 auto; width:100%; }
+    .summary-body{ max-width:520px; margin:0 auto; width:100%; }
+    .newlot-body{ max-width:480px; margin:0 auto; width:100%; }
+    .login-screen{ min-height:auto; border-radius:18px; padding:20px 0; }
+    .csv-modal{ max-width:520px; }
+  }
+
+  /* Desktop (Mac, ≥1024px): a bit more width and breathing room. */
+  @media (min-width: 1024px){
+    body{ padding:40px 24px; }
+    .phone{
+      max-width:760px;
+      border-radius:20px;
+    }
+    .lot-list{
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+    .body{ max-width:540px; }
+    .summary-body{ max-width:580px; }
+    .newlot-body{ max-width:540px; }
+    .board-two-col{ grid-template-columns:1fr 1fr; }
+    .board-stat-grid{ grid-template-columns:repeat(4, 1fr); }
+  }
+
+  /* Owner Home widens further than other screens on large displays —
+     this screen is designed to also work as a TV/info-board view.
+     The 'owner-view' class is toggled on <body> by JS when this screen shows. */
+  @media (min-width: 1024px){
+    body.owner-view .phone{ max-width:1100px; }
+    body.owner-view .board-stat-grid{ grid-template-columns:repeat(4, 1fr); }
+    body.owner-view .board-two-col{ grid-template-columns:1fr 1fr; }
+    body.owner-view .board-stat-num{ font-size:34px; }
+    body.owner-view .live-lot-name{ font-size:18px; }
+    body.owner-view .live-lot-pct{ font-size:22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- ============ LOGIN ============ -->
+  <div class="login-screen show" id="loginScreen">
+    <div class="login-accent-line"></div>
+    <div class="login-inner">
+      <div class="login-mark"></div>
+      <h1 class="brand-name">Merakki Knit Fab</h1>
+      <p class="brand-sub">Roll Weighing</p>
+
+      <div class="brand-divider"></div>
+      <div class="login-title">Sign in to continue</div>
+
+      <div class="login-form">
+        <div class="login-field">
+          <label>Username</label>
+          <input class="login-input" id="loginUser" type="text" placeholder="Enter username" autocomplete="off">
+        </div>
+        <div class="login-field">
+          <label>Password</label>
+          <input class="login-input" id="loginPass" type="password" placeholder="Enter password" autocomplete="off">
+        </div>
+        <div class="login-error" id="loginError">Incorrect username or password.</div>
+        <button class="login-btn" id="loginBtn">Sign In</button>
+      </div>
+
+      <div class="login-hint">Authorised operators only · Each weight is recorded under your name</div>
+    </div>
+    <div class="login-foot">MERAKKI KNIT FAB</div>
+  </div>
+
+  <!-- ============ OWNER HOME (Command Center) ============ -->
+  <div class="screen" id="ownerHomeScreen">
+    <header>
+      <div class="brand-title-row">Merakki Knit Fab</div>
+      <div class="title-row">
+        <div style="display:flex; gap:8px;">
+          <button class="new-lot-btn" id="ownerNewLotBtn">+ New Lot</button>
+          <button class="new-lot-btn secondary-btn" id="ownerViewAllBtn">View All Lots</button>
+        </div>
+        <div class="user-chip-wrap">
+          <button class="user-chip" id="ownerChipBtn">
+            <div class="user-avatar" id="ownerAvatar">D</div>
+            <span class="uname" id="ownerNameLabel">Deepak</span>
+            <span class="chip-chev">▾</span>
+          </button>
+          <div class="user-popover" id="ownerPopover">
+            <div class="popover-greet">Signed in as <b id="ownerNamePopover">Deepak</b></div>
+            <button class="logout-btn" id="ownerManageUsersBtn" style="margin-bottom:8px;">Manage Users</button>
+            <button class="logout-btn" id="ownerLogoutBtn">Log out</button>
+          </div>
+        </div>
+      </div>
+      <div class="owner-clock-row" id="ownerClockRow">
+        <span id="ownerClockText">—</span>
+        <span class="live-sync-dot"><span class="live-sync-pulse"></span> Live</span>
+        <button class="dark-mode-toggle" id="soundToggle" title="Toggle sound effects">🔊</button>
+        <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">🌙</button>
+        <button class="dark-mode-toggle" id="tvModeToggle" title="TV Mode">📺</button>
+      </div>
+    </header>
+
+    <div class="ambient-particles" id="ambientParticles"></div>
+
+    <div class="owner-board" id="ownerBoard">
+
+      <!-- AMBIENT CONTEXT STRIP -->
+      <div class="context-strip" id="contextStrip"></div>
+
+      <!-- AI DAILY SUMMARY -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Daily Summary</span>
+          <button class="voice-btn" id="voiceNarrateBtn" title="Read aloud">🔈</button>
+        </div>
+        <div class="ai-summary-box" id="aiSummaryBox"></div>
+      </div>
+
+      <!-- ACHIEVEMENTS -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Achievements</span>
+        </div>
+        <div class="achievements-row" id="achievementsRow"></div>
+      </div>
+
+      <!-- FACTORY FLOOR MINI-MAP -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Floor Map</span>
+        </div>
+        <div class="floor-map" id="floorMap"></div>
+      </div>
+
+      <!-- WORKER DUTIES (owner assigns) -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Worker Duties</span>
+        </div>
+        <div class="worker-duties-list" id="workerDutiesList"></div>
+      </div>
+
+      <!-- ACTIVITY TICKER -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Activity Feed</span>
+        </div>
+        <div class="activity-ticker" id="activityTicker"></div>
+      </div>
+
+      <!-- LIVE NOW -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Live Right Now</span>
+          <span class="live-dot-label"><span class="live-dot"></span> Active today</span>
+        </div>
+        <div class="live-lot-row" id="liveLotRow"></div>
+      </div>
+
+      <!-- TODAY'S PACE -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Today's Pace</span>
+        </div>
+        <div class="pace-gauge-row" id="paceGaugeRow"></div>
+      </div>
+
+      <!-- MONTH STATS -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">This Month</span>
+        </div>
+        <div class="board-stat-grid" id="monthStatGrid"></div>
+      </div>
+
+      <!-- TREND CHART -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Last 14 Days</span>
+        </div>
+        <div class="trend-chart-wrap" id="trendChartWrap"></div>
+      </div>
+
+      <!-- TWO COLUMN: most received + recent completions -->
+      <div class="board-two-col">
+        <div class="board-section">
+          <div class="board-section-head"><span class="board-section-title">Most Received</span></div>
+          <div class="rank-list" id="mostReceivedList"></div>
+        </div>
+        <div class="board-section">
+          <div class="board-section-head"><span class="board-section-title">Recently Completed</span></div>
+          <div class="rank-list" id="recentCompletedList"></div>
+        </div>
+      </div>
+
+      <!-- STAFF LEADERBOARD -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Staff Leaderboard — This Week</span>
+        </div>
+        <div class="leaderboard-list" id="leaderboardList"></div>
+      </div>
+
+      <!-- QUALITY/COLOUR HEATMAP -->
+      <div class="board-section">
+        <div class="board-section-head">
+          <span class="board-section-title">Quality × Colour Mix</span>
+        </div>
+        <div class="heatmap-grid" id="heatmapGrid"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ LOT DETAIL (owner drill-in stats) ============ -->
+  <div class="screen" id="lotDetailScreen">
+    <header>
+      <div class="back-row">
+        <button class="back-btn" id="backBtnLotDetail">‹ Owner Home</button>
+      </div>
+      <div class="tag">Merakki · Lot Detail</div>
+      <h1 id="lotDetailTitle">MK26L0000</h1>
+    </header>
+    <div class="summary-body">
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="ldRolls">0</div><div class="lbl">Rolls</div></div>
+        <div class="stat"><div class="num" id="ldAvgWeight">0.00</div><div class="lbl">Avg kg</div></div>
+        <div class="stat"><div class="num" id="ldPace">—</div><div class="lbl">Avg min/roll</div></div>
+      </div>
+      <div class="detail-meta-list" id="lotDetailMeta"></div>
+      <button class="export-btn" id="lotDetailExportBtn" style="display:none;"><span class="odoo-mark">O</span> Export for Odoo (CSV)</button>
+    </div>
+  </div>
+
+  <!-- ============ MANAGE USERS ============ -->
+  <div class="screen" id="manageUsersScreen">
+    <header>
+      <div class="back-row">
+        <button class="back-btn" id="backBtnManageUsers">‹ Owner Home</button>
+      </div>
+      <div class="tag">Merakki · Administration</div>
+      <h1>Manage Users</h1>
+    </header>
+    <div class="newlot-body">
+      <div class="newlot-error" id="manageUsersError"></div>
+      <div id="userManageList"></div>
+
+      <div class="add-user-card">
+        <div class="segment-title" style="margin-bottom:10px;">Add User</div>
+        <div class="segment-row">
+          <div>
+            <span class="segment-mini-label">Username</span>
+            <input class="nl-input" id="newUserName" type="text" placeholder="e.g. Ramesh">
+          </div>
+          <div>
+            <span class="segment-mini-label">Password</span>
+            <input class="nl-input" id="newUserPass" type="text" placeholder="e.g. Ramesh1234">
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <span class="segment-mini-label">Role</span>
+          <select class="nl-select" id="newUserRole" style="margin-top:6px;">
+            <option value="worker">Worker — weighing access only</option>
+            <option value="owner">Owner — full access</option>
+          </select>
+        </div>
+        <button class="save-btn" id="addUserBtn" style="margin-top:14px;">Add User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="screen" id="dashboardScreen">
+    <header>
+      <div class="brand-title-row">Merakki Knit Fab</div>
+      <div class="title-row">
+        <button class="new-lot-btn" id="newLotBtn">+ New Lot</button>
+        <div class="user-chip-wrap">
+          <button class="user-chip" id="userChipBtn">
+            <div class="user-avatar" id="userAvatar">D</div>
+            <span class="uname" id="userName">Deepak</span>
+            <span class="chip-chev">▾</span>
+          </button>
+          <div class="user-popover" id="userPopover">
+            <div class="popover-greet">Signed in as <b id="userNamePopover">Deepak</b></div>
+            <button class="logout-btn" id="fontSizeToggleBtn" style="margin-bottom:8px;">🔍 Larger Text</button>
+            <button class="logout-btn" id="ownerBackFromDashBtn" style="margin-bottom:8px; display:none;">Owner Home</button>
+            <button class="logout-btn" id="logoutBtn">Log out</button>
+          </div>
+        </div>
+      </div>
+      <div class="offline-banner" id="offlineBanner">⚠ Connection lost — changes may not be saving. Reconnecting…</div>
+    </header>
+
+    <div class="tabs">
+      <div class="tab active" id="tabPending" data-tab="pending">Pending <span class="count">(8)</span></div>
+      <div class="tab" id="tabCompleted" data-tab="completed">Completed <span class="count">(4)</span></div>
+    </div>
+
+    <div class="search-row" id="pendingSearchRow">
+      <div class="search-input-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="pendingSearchInput" type="text" placeholder="Search pending lots — number, quality, colour…">
+        <button class="search-clear" id="pendingSearchClear">×</button>
+      </div>
+    </div>
+    <div class="search-row hidden-row" id="completedSearchRow">
+      <div class="search-input-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="completedSearchInput" type="text" placeholder="Search completed lots — number, quality, colour…">
+        <button class="search-clear" id="completedSearchClear">×</button>
+      </div>
+    </div>
+
+    <div class="owner-note-box" id="ownerNoteBox" style="display:none;">
+      <div class="owner-note-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l3.5 5V5L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 8a3 3 0 0 1 0 8"/><path d="M18 5a7 7 0 0 1 0 14"/></svg>
+        <span class="owner-note-label">Note from Owner</span>
+        <button class="owner-note-edit-btn" id="ownerNoteEditBtn">Edit</button>
+      </div>
+      <div class="owner-note-text" id="ownerNoteText"></div>
+      <div class="owner-note-edit-area" id="ownerNoteEditArea" style="display:none;">
+        <textarea id="ownerNoteTextarea" maxlength="280" placeholder="e.g. Please prioritise the Valentino Black lots — client pickup this evening."></textarea>
+        <div class="owner-note-edit-actions">
+          <button class="owner-note-save-btn" id="ownerNoteSaveBtn">Save</button>
+          <button class="owner-note-cancel-btn" id="ownerNoteCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY DUTIES (worker-private, owner-assigned) -->
+    <div class="my-duties-box" id="myDutiesBox" style="display:none;">
+      <div class="my-duties-header">
+        <span class="my-duties-label">📋 My Duties Today</span>
+      </div>
+      <div class="my-duties-note" id="myDutiesNote"></div>
+      <div class="my-duties-tasks" id="myDutiesTasks"></div>
+    </div>
+
+    <!-- PERSONAL DAILY TALLY -->
+    <div class="daily-tally-row" id="dailyTallyRow"></div>
+
+    <!-- MY RECENT LOTS -->
+    <div class="my-recent-lots" id="myRecentLots"></div>
+
+    <div class="lot-list" id="pendingList"></div>
+    <div class="lot-list hidden-list" id="completedList"></div>
+  </div>
+
+  <!-- ============ NEW LOT SCREEN ============ -->
+  <div class="screen" id="newLotScreen">
+    <header>
+      <div class="back-row">
+        <button class="back-btn" id="backBtnNewLot">‹ All Lots</button>
+      </div>
+      <div class="tag">Merakki Knit Fab · Create Lot</div>
+      <h1>New Lot</h1>
+    </header>
+
+    <div class="tabs">
+      <div class="tab active" id="tabManual" data-tab="manual">Manual Entry</div>
+      <div class="tab" id="tabUpload" data-tab="upload">Upload File</div>
+    </div>
+
+    <div class="newlot-body" id="manualPane">
+      <div class="newlot-error" id="manualError"></div>
+
+      <div class="nl-field">
+        <span class="field-label">Lot Number</span>
+        <div class="lot-prefix-row">
+          <span class="lot-prefix">MK26L</span>
+          <input class="nl-input lot-suffix-input" id="nlLotSuffix" type="text" inputmode="numeric" placeholder="1399" maxlength="4">
+        </div>
+      </div>
+
+      <div class="nl-field">
+        <span class="field-label">Total Rolls in Lot</span>
+        <input class="nl-input" id="nlTotalRolls" type="number" inputmode="numeric" placeholder="e.g. 46" min="1">
+      </div>
+
+      <div class="segments-header">
+        <span class="field-label" style="margin:0;">Segments</span>
+        <span class="weight-hint" style="margin:0;">Each segment is a run of rolls sharing the same quality, colour &amp; reference</span>
+      </div>
+
+      <div id="segmentsList"></div>
+
+      <button class="add-segment-btn" id="addSegmentBtn">+ Add Segment</button>
+
+      <div class="segment-progress" id="segmentProgress">0 of — rolls allocated</div>
+
+      <button class="save-btn" id="createLotBtn" style="margin-top:6px;">Create Lot</button>
+    </div>
+
+    <div class="newlot-body" id="uploadPane" style="display:none;">
+      <div class="newlot-error" id="uploadError"></div>
+
+      <div class="upload-rule-box">
+        <b>One lot per file.</b> The file must contain rows for a single Lot Number only. To create multiple lots, upload separate files.
+      </div>
+
+      <div class="nl-field">
+        <span class="field-label">Expected columns</span>
+        <div class="columns-chip-row">
+          <span class="col-chip">Lot</span>
+          <span class="col-chip">Roll#</span>
+          <span class="col-chip">Quality</span>
+          <span class="col-chip">Colour</span>
+          <span class="col-chip">Internal Reference</span>
+          <span class="col-chip muted">Weight (blank)</span>
+        </div>
+      </div>
+
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-icon">⬆</div>
+        <div class="dropzone-title">Choose a CSV or Excel file</div>
+        <div class="dropzone-sub">.csv or .xlsx — one lot's roll plan</div>
+        <input type="file" id="fileInput" accept=".csv,.xlsx" style="display:none;">
+      </div>
+
+      <div class="file-preview" id="filePreview" style="display:none;">
+        <div class="file-preview-name" id="filePreviewName"></div>
+        <div class="file-preview-summary" id="filePreviewSummary"></div>
+      </div>
+
+      <button class="save-btn" id="confirmUploadBtn" style="margin-top:14px; display:none;">Create Lot From File</button>
+    </div>
+  </div>
+
+  <!-- ============ WEIGHING SCREEN ============ -->
+  <div class="screen" id="entryScreen">
+    <header>
+      <div class="back-row">
+        <button class="back-btn" id="backBtn">‹ All Lots</button>
+      </div>
+      <div class="tag" id="entryLotTag">Merakki · MK26L1228</div>
+      <h1>Enter Weight</h1>
+    </header>
+
+    <div class="body">
+      <button class="handsfree-toggle-btn" id="handsfreeToggleBtn">🎙️ Start Hands-Free Voice Mode</button>
+      <div class="handsfree-status" id="handsfreeStatus" style="display:none;">
+        <div class="handsfree-status-dot"></div>
+        <div class="handsfree-status-text" id="handsfreeStatusText">Listening…</div>
+        <button class="handsfree-exit-btn" id="handsfreeExitBtn">Exit</button>
+      </div>
+
+      <div>
+        <div class="lookup-row" style="padding:0 0 0 0; border:none;">
+          <span class="field-label" style="margin:0;">Now Weighing</span>
+          <span class="progress"><b id="progressText">Roll 1</b> of <span id="progressTotal">10</span></span>
+        </div>
+        <div class="progressbar"><div class="fill" id="progressFill"></div></div>
+      </div>
+
+      <div style="position:relative;">
+        <span class="field-label">Jump to a specific roll</span>
+        <div class="jump-row">
+          <div class="jump-trigger" id="jumpTrigger">
+            <span id="jumpTriggerLabel">Roll 1 — Pending</span>
+            <span class="chev">▾</span>
+          </div>
+          <button class="jump-btn" id="jumpBtn">Go</button>
+        </div>
+        <div class="jump-panel" id="jumpPanel"></div>
+      </div>
+
+      <div class="edit-banner" id="editBanner">Editing an already-weighed roll. Saving will reprint the sticker and update the lot summary.</div>
+
+      <div class="lookup-card">
+        <div class="lookup-row">
+          <span class="k">Roll No.</span>
+          <span class="v" id="rollNoVal">MK26L1228R01</span>
+        </div>
+        <div class="lookup-row">
+          <span class="k">Quality</span>
+          <span class="v" id="qualityVal">Valentino</span>
+        </div>
+        <div class="lookup-row">
+          <span class="k">Colour</span>
+          <span class="v" id="colourVal"><span class="swatch"></span>Black</span>
+        </div>
+        <div class="lookup-row">
+          <span class="k">Internal Ref</span>
+          <span class="v muted" id="refVal">MKF26-I801-A01</span>
+        </div>
+      </div>
+
+      <div>
+        <span class="field-label">Weight <span style="color:var(--muted); text-transform:none; font-weight:600;">(1–50 kg)</span></span>
+        <div class="weight-wrap">
+          <input class="weight-input" id="weightInput" type="text" inputmode="decimal" placeholder="0.00" maxlength="6">
+          <span class="weight-unit">kg</span>
+        </div>
+        <div class="login-error" id="weightError" style="margin-top:8px;">Weight must be between 1 kg and 50 kg.</div>
+        <div class="weight-hint">Type digits only — the decimal point is added automatically (e.g. 2580 → 25.80)</div>
+        <button class="repeat-weight-btn" id="repeatWeightBtn" style="display:none;">↻ Repeat last weight</button>
+      </div>
+
+      <div>
+        <span class="field-label">Remark <span style="color:var(--muted); text-transform:none; font-weight:600;">(optional)</span></span>
+        <input class="remark-input" id="remarkInput" type="text" placeholder="e.g. Daagi, Knitting Fault, Panna Short">
+        <div class="remark-chip-row" id="remarkChipRow">
+          <button class="remark-chip" data-remark="Daagi">Daagi</button>
+          <button class="remark-chip" data-remark="Knitting Fault">Knitting Fault</button>
+          <button class="remark-chip" data-remark="Panna Short">Panna Short</button>
+        </div>
+      </div>
+
+      <button class="save-btn" id="saveBtn">Save &amp; Print Sticker</button>
+      <button class="save-secondary-btn" id="saveNoPrintBtn">Save &amp; Next <span class="no-print-tag">no sticker</span></button>
+      <div class="footnote" id="entryFootnote">Sticker prints at the warehouse station.<br>Next pending roll loads automatically.</div>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM ============ -->
+  <div class="screen confirm" id="confirmScreen">
+    <div class="check">✓</div>
+    <h2>Sticker Sent to Printer</h2>
+    <p>Roll <span class="roll" id="confirmRoll">MK26L1228R01</span><br><span id="confirmDetail">25.800 kg · Valentino · Black</span></p>
+    <button class="again-btn" id="nextBtn">Weigh Next Roll →</button>
+  </div>
+
+  <!-- ============ LOT SUMMARY (from dashboard tap on completed, or end of lot) ============ -->
+  <div class="screen" id="summaryScreen">
+    <header>
+      <div class="back-row">
+        <button class="back-btn" id="backBtnSummary">‹ All Lots</button>
+      </div>
+      <div class="tag">Merakki · Lot Summary</div>
+      <h1 id="summaryTitle">Lot Complete</h1>
+      <div class="lot-created-by-row" id="summaryCreatedBy">Created by Deepak</div>
+    </header>
+    <div class="summary-body">
+      <div class="stat-row">
+        <div class="stat">
+          <div class="num" id="statRolls">10</div>
+          <div class="lbl">Rolls</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="totalWeight">0.000</div>
+          <div class="lbl">Total kg</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="avgWeight">0.000</div>
+          <div class="lbl">Avg kg</div>
+        </div>
+      </div>
+
+      <button class="export-btn" id="rfidVerifyBtn" style="background:var(--ink); margin-bottom:10px;">📡 Verify with RFID Scanner</button>
+      <button class="export-btn" id="exportOdooBtn"><span class="odoo-mark">O</span> Export for Odoo (CSV)</button>
+
+      <div class="roll-table" id="rollTable">
+        <div class="trow head"><span>Roll</span><span>Weight</span><span></span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ CSV EXPORT MODAL (fallback for environments that block downloads) ============ -->
+<div class="csv-modal-backdrop" id="csvExportModal">
+  <div class="csv-modal">
+    <div class="csv-modal-head">
+      <div>
+        <div class="csv-modal-title">Export Ready</div>
+        <div class="csv-modal-filename" id="csvModalFilename">MK26L0000_odoo_export.csv</div>
+      </div>
+      <button class="csv-modal-close" id="csvModalClose">×</button>
+    </div>
+    <div class="csv-modal-note">If the download didn't start automatically, copy the CSV below or try downloading again.</div>
+    <textarea class="csv-modal-textarea" id="csvModalContent" readonly></textarea>
+    <div class="csv-modal-actions">
+      <button class="csv-modal-btn secondary" id="csvModalCopyBtn">Copy All</button>
+      <button class="csv-modal-btn primary" id="csvModalDownloadAgainBtn">⬇ Download Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ END-OF-SHIFT SUMMARY (worker logout) ============ -->
+<div class="shift-summary-overlay" id="shiftSummaryOverlay">
+  <div class="shift-summary-card">
+    <div class="shift-summary-title">Nice work today 👏</div>
+    <div class="shift-summary-stats" id="shiftSummaryStats"></div>
+    <button class="save-btn" id="shiftSummaryDoneBtn">Done — Log Out</button>
+  </div>
+</div>
+
+<!-- ============ DUTIES EDITOR MODAL ============ -->
+<div class="duties-modal-backdrop" id="dutiesModalBackdrop">
+  <div class="duties-modal">
+    <div class="duties-modal-header">
+      <span id="dutiesModalTitle">Assign duties — Yogesh</span>
+      <button class="duties-modal-close" id="dutiesModalClose">×</button>
+    </div>
+    <div class="duties-modal-body">
+      <span class="field-label">Note for this worker</span>
+      <textarea id="dutiesModalNote" maxlength="280" placeholder="e.g. Focus on Valentino Black today — client pickup at 6pm."></textarea>
+      <span class="field-label" style="margin-top:14px;">Task list</span>
+      <div id="dutiesModalTaskList"></div>
+      <div class="duties-add-task-row">
+        <input type="text" id="dutiesModalNewTask" placeholder="Add a task…">
+        <button id="dutiesModalAddTaskBtn">+ Add</button>
+      </div>
+    </div>
+    <div class="duties-modal-actions">
+      <button class="save-btn" id="dutiesModalSaveBtn">Save Duties</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TV MODE OVERLAY ============ -->
+<div class="tv-mode-overlay" id="tvModeOverlay">
+  <button class="tv-mode-exit" id="tvModeExitBtn">✕ Exit TV Mode</button>
+  <div class="tv-mode-slides" id="tvModeSlides"></div>
+  <div class="tv-mode-dots" id="tvModeDots"></div>
+</div>
+
+<canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+
+<script>
+  /* ---------------- Users (preview only — real version stores these securely on the server) ---------------- */
+  const USERS = {
+    "Yogesh": { password: "Yogesh1234", role: "worker" },
+    "Dev":    { password: "Dev1234",    role: "worker" },
+    "Deepak": { password: "Deepak1234", role: "owner"  }
+  };
+  let currentUser = null;
+  let currentRole = null;
+
+  function doLogin(){
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    const err = document.getElementById('loginError');
+    // case-insensitive username match, exact password
+    const matchKey = Object.keys(USERS).find(k => k.toLowerCase() === u.toLowerCase());
+    if (matchKey && USERS[matchKey].password === p){
+      currentUser = matchKey;
+      currentRole = USERS[matchKey].role;
+      document.getElementById('userName').textContent = matchKey;
+      document.getElementById('userNamePopover').textContent = matchKey;
+      document.getElementById('userAvatar').textContent = matchKey.charAt(0).toUpperCase();
+      err.classList.remove('show');
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginScreen').classList.remove('show');
+      document.getElementById('ownerBackFromDashBtn').style.display = (currentRole === 'owner') ? 'block' : 'none';
+      if (currentRole === 'owner'){
+        renderOwnerHome();
+        showScreen('ownerHomeScreen');
+      } else {
+        renderPending();
+        renderCompleted();
+        showScreen('dashboardScreen');
+      }
+    } else {
+      err.classList.add('show');
+      document.getElementById('loginPass').value = '';
+    }
+  }
+
+  function doLogout(){
+    // Worker feature: show a quick end-of-shift recap before actually logging out,
+    // but only if there's something real to recap and only for non-owner roles
+    if (currentRole !== 'owner' && currentUser){
+      let count = 0, weightSum = 0;
+      ALL_LOTS.forEach(l => {
+        Object.values(l.rolls).forEach(r => {
+          if (r && r.at && r.by === currentUser && isToday(r.at)) { count++; weightSum += r.weight; }
+        });
+      });
+      if (count > 0){
+        showShiftSummary(count, weightSum);
+        return; // actual logout happens when they dismiss the summary
+      }
+    }
+    finishLogout();
+  }
+
+  function showShiftSummary(count, weightSum){
+    // Close the popover first — otherwise the capture-phase "click outside
+    // closes popover" listener intercepts and stops the click before it
+    // ever reaches the Done button inside this overlay.
+    document.getElementById('userPopover').classList.remove('show');
+    const overlay = document.getElementById('shiftSummaryOverlay');
+    const avg = weightSum / count;
+    document.getElementById('shiftSummaryStats').innerHTML =
+      `<div class="shift-stat"><div class="num">${count}</div><div class="lbl">Rolls</div></div>` +
+      `<div class="shift-stat"><div class="num">${weightSum.toFixed(1)}</div><div class="lbl">Total kg</div></div>` +
+      `<div class="shift-stat"><div class="num">${avg.toFixed(1)}</div><div class="lbl">Avg kg</div></div>`;
+    overlay.classList.add('show');
+  }
+
+  function finishLogout(){
+    document.getElementById('shiftSummaryOverlay').classList.remove('show');
+    currentUser = null;
+    currentRole = null;
+    document.getElementById('userPopover').classList.remove('show');
+    document.getElementById('ownerBackFromDashBtn').style.display = 'none';
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+    document.getElementById('loginScreen').classList.add('show');
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+  document.getElementById('logoutBtn').addEventListener('click', doLogout);
+  document.getElementById('shiftSummaryDoneBtn').addEventListener('click', finishLogout);
+
+  document.getElementById('fontSizeToggleBtn').addEventListener('click', () => {
+    document.body.classList.toggle('large-text-mode');
+    const isLarge = document.body.classList.contains('large-text-mode');
+    document.getElementById('fontSizeToggleBtn').textContent = isLarge ? '🔍 Normal Text' : '🔍 Larger Text';
+  });
+
+  function updateOfflineBanner(){
+    const banner = document.getElementById('offlineBanner');
+    if (!banner) return;
+    banner.classList.toggle('show', !navigator.onLine);
+  }
+  window.addEventListener('online', updateOfflineBanner);
+  window.addEventListener('offline', updateOfflineBanner);
+  updateOfflineBanner();
+
+  document.getElementById('userChipBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('userPopover').classList.toggle('show');
+  });
+  document.addEventListener('click', (e) => {
+    const pop = document.getElementById('userPopover');
+    const chip = document.getElementById('userChipBtn');
+    if (pop.classList.contains('show') && !pop.contains(e.target) && !chip.contains(e.target)){
+      pop.classList.remove('show');
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  /* ---------------- Sample data: 8 pending + 4 completed lots ---------------- */
+  /* Each lot now owns its own roll data so progress persists and the dashboard
+     can always be recalculated from real entries instead of a static "done" count. */
+  function daysAgo(n){
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0,10);
+  }
+
+  function makeLot(lot, quality, colour, total, doneCount, createdDaysAgo, priority, createdBy){
+    const rolls = {}; // rollNumber -> { weight, remark, by, corrected, at }
+    const createdDate = new Date();
+    createdDate.setDate(createdDate.getDate() - createdDaysAgo);
+    createdDate.setHours(9, 0, 0, 0);
+
+    let cursor = new Date(createdDate);
+    let lastActivity = null;
+    let completedAt = null;
+
+    for (let i=1; i<=doneCount; i++){
+      // simulate realistic pacing: roughly 2-6 minutes between rolls, on the
+      // creation day or the following day or two depending on lot size
+      cursor = new Date(cursor.getTime() + (2 + Math.random()*4) * 60000);
+      rolls[i] = {
+        weight: +(20 + Math.random()*10).toFixed(2),
+        remark: (lot==="MK26L1228" && i===3) ? "Panna Short" : (lot==="MK26L1228" && i===7) ? "Daagi" : null,
+        by: SAMPLE_OPERATORS_STATIC[i % SAMPLE_OPERATORS_STATIC.length],
+        corrected: false,
+        printed: true,
+        at: cursor.toISOString()
+      };
+      lastActivity = cursor.toISOString();
+    }
+    if (doneCount >= total && doneCount > 0){
+      completedAt = lastActivity;
+    }
+
+    return {
+      lot, quality, colour, total, rolls,
+      created: createdDate.toISOString().slice(0,10),
+      createdAt: createdDate.toISOString(),
+      createdBy: createdBy || SAMPLE_OPERATORS_STATIC[0],
+      lastActivity, completedAt,
+      priority: !!priority
+    };
+  }
+
+  function lotMarkActivity(lot){
+    const now = new Date().toISOString();
+    lot.lastActivity = now;
+    if (lotIsCompleteRaw(lot) && !lot.completedAt){
+      lot.completedAt = now;
+      fireConfetti();
+      playCompleteChime();
+    } else {
+      playSaveDing();
+    }
+  }
+
+  const SAMPLE_OPERATORS_STATIC = ["Yogesh", "Dev", "Deepak"];
+
+  const ALL_LOTS = [
+    makeLot("MK26L1228", "Valentino",   "Black",     10, 8,  1, true, "Yogesh"),
+    makeLot("MK26L1331", "Mario Rib",   "Mint",      50, 12, 2, false, "Deepak"),
+    makeLot("MK26L1297", "Semi Zurich", "Navy Blue", 30, 30, 4, false, "Dev"),
+    makeLot("MK26L1305", "Valentino",   "White",     25, 4,  4, false, "Yogesh"),
+    makeLot("MK26L1318", "Mario Rib",   "Black",     40, 22, 6, false, "Deepak"),
+    makeLot("MK26L1340", "Semi Zurich", "Mint",      20, 1,  8, false, "Yogesh"),
+    makeLot("MK26L1352", "Valentino",   "Sky",       15, 9,  9, false, "Dev"),
+    makeLot("MK26L1289", "Mario Rib",   "Navy Blue", 35, 35, 10, false, "Yogesh"),
+    makeLot("MK26L1190", "Valentino",   "Mint",      28, 28, 14, false, "Deepak"),
+    makeLot("MK26L1204", "Semi Zurich", "Black",     18, 18, 16, false, "Dev"),
+    makeLot("MK26L1176", "Mario Rib",   "White",     42, 42, 20, false, "Yogesh"),
+    makeLot("MK26L1163", "Valentino",   "Navy Blue", 12, 12, 23, false, "Deepak"),
+  ];
+
+  // Preview-only seed: a sample note from the Owner, shown in the dashboard's
+  // note box. Empty string would hide the box for workers entirely ("if any").
+  let ownerInstructions = "Please prioritise the Valentino Black lot — client pickup is scheduled for this evening.";
+
+  // Preview-only seed: per-worker duties assigned by the owner. Each worker
+  // only ever sees their own entry — there is no shared/visible-to-all view.
+  let WORKER_DUTIES = {
+    "Yogesh": {
+      note: "Focus on Valentino Black today — client pickup at 6pm.",
+      tasks: [
+        { text: "Finish weighing MK26L1228", done: false },
+        { text: "Restock sticker rolls at station 2", done: true },
+      ]
+    },
+    "Dev": {
+      note: "",
+      tasks: [
+        { text: "Double-check MK26L1331 colours match the order sheet", done: false },
+      ]
+    }
+  };
+
+  /* Preview-only: stamp the two newest in-progress lots with activity from the
+     last few minutes, so "Live Right Now" has something real to display.
+     Shifts the last few rolls together (not just the very last one) so the
+     average-minutes-between-rolls stat stays realistic rather than showing
+     one huge artificial gap. A real app would naturally have this from use. */
+  (function seedLiveActivity(){
+    const candidates = ALL_LOTS.filter(l => !lotIsCompleteRaw(l) && lotDoneCount(l) > 0).slice(0, 2);
+    candidates.forEach((l, idx) => {
+      const mostRecentMinsAgo = idx === 0 ? 3 : 22;
+      const doneKeys = Object.keys(l.rolls).map(Number).sort((a,b)=>a-b);
+      const tailCount = Math.min(4, doneKeys.length);
+      const tailKeys = doneKeys.slice(-tailCount);
+      // space the tail rolls 2-5 minutes apart, ending at mostRecentMinsAgo
+      let minutesBack = mostRecentMinsAgo;
+      for (let i = tailKeys.length - 1; i >= 0; i--){
+        l.rolls[tailKeys[i]].at = new Date(Date.now() - minutesBack*60000).toISOString();
+        minutesBack += 2 + Math.random()*3;
+      }
+      l.lastActivity = l.rolls[tailKeys[tailKeys.length-1]].at;
+    });
+  })();
+
+  function lotDoneCount(lot){
+    return Object.keys(lot.rolls).filter(k => lot.rolls[k] && lot.rolls[k].weight !== undefined).length;
+  }
+  function lotIsCompleteRaw(lot){ return lotDoneCount(lot) >= lot.total; }
+  function lotIsComplete(lot){ return lotDoneCount(lot) >= lot.total; }
+  function lotPending(){
+    return ALL_LOTS.filter(l => !lotIsComplete(l))
+                    .sort((a,b) => (b.priority?1:0) - (a.priority?1:0));
+  }
+  function lotCompleted(){ return ALL_LOTS.filter(l => lotIsComplete(l)); }
+  function lotAvg(lot){
+    const vals = Object.values(lot.rolls).map(r => r.weight).filter(w => w !== undefined);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  }
+
+  /* Average minutes between consecutive roll saves in a lot — a measure of weighing pace */
+  function lotAvgMinutesBetweenRolls(lot){
+    /* Excludes gaps over 60 minutes — those represent a break between
+       weighing sessions (end of shift, next day, etc.), not the actual
+       pace of weighing. Without this, a single overnight gap would
+       dominate the average and make the pace figure meaningless. */
+    const SESSION_BREAK_MINUTES = 60;
+    const times = Object.values(lot.rolls)
+      .filter(r => r && r.at)
+      .map(r => new Date(r.at).getTime())
+      .sort((a,b) => a-b);
+    if (times.length < 2) return null;
+    let totalGap = 0, count = 0;
+    for (let i=1; i<times.length; i++){
+      const gapMinutes = (times[i] - times[i-1]) / 60000;
+      if (gapMinutes <= SESSION_BREAK_MINUTES){
+        totalGap += gapMinutes;
+        count++;
+      }
+    }
+    return count > 0 ? totalGap / count : null;
+  }
+
+  function lotDaysToComplete(lot){
+    if (!lot.completedAt || !lot.createdAt) return null;
+    const ms = new Date(lot.completedAt) - new Date(lot.createdAt);
+    return ms / (1000*60*60*24);
+  }
+
+  /* ================= OWNER HOME (Command Center) ================= */
+  function isToday(isoString){
+    if (!isoString) return false;
+    const d = new Date(isoString);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() &&
+           d.getMonth() === now.getMonth() &&
+           d.getDate() === now.getDate();
+  }
+
+  function isThisMonth(isoString){
+    if (!isoString) return false;
+    const d = new Date(isoString);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+
+  function formatTimeAgo(isoString){
+    if (!isoString) return '—';
+    const ms = new Date() - new Date(isoString);
+    const mins = Math.floor(ms / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.floor(hrs/24) + 'd ago';
+  }
+
+  function updateOwnerClock(){
+    const el = document.getElementById('ownerClockText');
+    if (!el) return;
+    const now = new Date();
+    el.textContent = now.toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'long' }) +
+      '  ·  ' + now.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+  }
+  setInterval(updateOwnerClock, 30000);
+
+  function renderLiveLots(){
+    const wrap = document.getElementById('liveLotRow');
+    wrap.innerHTML = '';
+    const live = ALL_LOTS.filter(l => l.lastActivity && isToday(l.lastActivity) && !lotIsComplete(l));
+    if (live.length === 0){
+      wrap.innerHTML = '<div class="empty-board-note">No lots are being weighed right now.</div>';
+      return;
+    }
+    live.sort((a,b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+    live.forEach(l => {
+      const done = lotDoneCount(l);
+      const pct = Math.round((done/l.total)*100);
+      const minsAgo = (new Date() - new Date(l.lastActivity)) / 60000;
+      const isHot = minsAgo < 10;
+      const card = document.createElement('div');
+      card.className = 'live-lot-card' + (isHot ? ' pulse' : '');
+      card.innerHTML = `
+        <div class="live-lot-left">
+          <div class="live-lot-name">${l.lot}</div>
+          <div class="live-lot-sub">${lotCardLabel(l)} · ${done} of ${l.total} rolls</div>
+        </div>
+        <div class="live-lot-right">
+          <div class="live-lot-pct">${pct}%</div>
+          <div class="live-lot-time">last weighed ${formatTimeAgo(l.lastActivity)}</div>
+        </div>`;
+      card.addEventListener('click', () => openLotDetail(l));
+      wrap.appendChild(card);
+    });
+  }
+
+  function renderActivityTicker(){
+    const wrap = document.getElementById('activityTicker');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const events = [];
+    ALL_LOTS.forEach(l => {
+      if (l.createdAt){
+        events.push({ at: l.createdAt, text: 'New lot ' + l.lot + ' created by ' + (l.createdBy || 'Unknown') });
+      }
+      Object.entries(l.rolls).forEach(([n, r]) => {
+        if (r && r.at){
+          events.push({ at: r.at, text: (r.by || 'Someone') + ' weighed ' + l.lot + 'R' + pad2(+n) + (r.corrected ? ' (corrected)' : '') });
+        }
+      });
+    });
+    events.sort((a,b) => new Date(b.at) - new Date(a.at));
+    const recent = events.slice(0, 8);
+
+    if (recent.length === 0){
+      wrap.innerHTML = '<div class="empty-board-note">No activity yet.</div>';
+      return;
+    }
+    recent.forEach(e => {
+      const row = document.createElement('div');
+      row.className = 'activity-row';
+      row.innerHTML = '<span class="activity-dot"></span><span class="activity-text">' + e.text + '</span><span class="activity-time">' + formatTimeAgo(e.at) + '</span>';
+      wrap.appendChild(row);
+    });
+  }
+  function countUp(el, target, decimals){
+    const start = parseFloat(el.dataset.prevVal) || 0;
+    const end = parseFloat(target);
+    if (isNaN(end) || start === end){
+      el.textContent = decimals ? end.toFixed(decimals) : Math.round(end);
+      el.dataset.prevVal = end;
+      return;
+    }
+    const duration = 600;
+    const startTime = performance.now();
+    function step(now){
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      const current = start + (end - start) * eased;
+      el.textContent = decimals ? current.toFixed(decimals) : Math.round(current);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.dataset.prevVal = end;
+    }
+    requestAnimationFrame(step);
+  }
+
+  function renderMonthStats(){
+    const wrap = document.getElementById('monthStatGrid');
+    wrap.innerHTML = '';
+
+    const lotsCreatedThisMonth = ALL_LOTS.filter(l => isThisMonth(l.createdAt));
+    const allRollsThisMonth = [];
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => { if (r && r.at && isThisMonth(r.at)) allRollsThisMonth.push(r); });
+    });
+    const totalWeight = allRollsThisMonth.reduce((s,r) => s + r.weight, 0);
+    const avgWeight = allRollsThisMonth.length ? totalWeight/allRollsThisMonth.length : 0;
+
+    const qualityCount = {};
+    const colourCount = {};
+    ALL_LOTS.forEach(l => {
+      const segs = l.segments && l.segments.length ? l.segments : [{quality:l.quality, colour:l.colour}];
+      segs.forEach(s => {
+        qualityCount[s.quality] = (qualityCount[s.quality]||0) + 1;
+        colourCount[s.colour] = (colourCount[s.colour]||0) + 1;
+      });
+    });
+    const topQuality = Object.entries(qualityCount).sort((a,b)=>b[1]-a[1])[0];
+    const topColour = Object.entries(colourCount).sort((a,b)=>b[1]-a[1])[0];
+
+    const cards = [
+      { num: lotsCreatedThisMonth.length, lbl: 'Lots Created', isNumeric: true },
+      { num: allRollsThisMonth.length, lbl: 'Rolls Weighed', isNumeric: true },
+      { num: avgWeight, lbl: 'Avg Weight (kg)', isNumeric: true, decimals: 2 },
+      { num: topQuality ? topQuality[0] : '—', lbl: 'Top Quality', sub: topQuality ? topQuality[1]+' lots' : '', isNumeric: false },
+    ];
+    cards.forEach((c, idx) => {
+      const card = document.createElement('div');
+      card.className = 'board-stat-card';
+      card.innerHTML = `
+        <div class="board-stat-num" id="monthStat${idx}">${c.isNumeric ? '' : c.num}</div>
+        <div class="board-stat-lbl">${c.lbl}</div>
+        ${c.sub ? '<div class="board-stat-sub">'+c.sub+'</div>' : ''}`;
+      wrap.appendChild(card);
+      if (c.isNumeric){
+        countUp(card.querySelector('.board-stat-num'), c.num, c.decimals || 0);
+      }
+    });
+  }
+
+  function renderMostReceived(){
+    const wrap = document.getElementById('mostReceivedList');
+    wrap.innerHTML = '';
+    const qualityCount = {};
+    ALL_LOTS.forEach(l => {
+      const segs = l.segments && l.segments.length ? l.segments : [{quality:l.quality, colour:l.colour}];
+      segs.forEach(s => {
+        const key = s.quality + ' · ' + s.colour;
+        qualityCount[key] = (qualityCount[key]||0) + 1;
+      });
+    });
+    const ranked = Object.entries(qualityCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if (ranked.length === 0){
+      wrap.innerHTML = '<div class="empty-board-note">No data yet.</div>';
+      return;
+    }
+    ranked.forEach(([key, count], i) => {
+      const row = document.createElement('div');
+      row.className = 'rank-row';
+      row.innerHTML = `
+        <div class="rank-left">
+          <div class="rank-badge">${i+1}</div>
+          <div class="rank-name">${key}</div>
+        </div>
+        <div class="rank-value">${count} lot${count>1?'s':''}</div>`;
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderRecentCompletions(){
+    const wrap = document.getElementById('recentCompletedList');
+    wrap.innerHTML = '';
+    const completed = ALL_LOTS.filter(l => l.completedAt)
+      .sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt))
+      .slice(0,5);
+    if (completed.length === 0){
+      wrap.innerHTML = '<div class="empty-board-note">No completed lots yet.</div>';
+      return;
+    }
+    completed.forEach(l => {
+      const row = document.createElement('div');
+      row.className = 'rank-row';
+      row.style.cursor = 'pointer';
+      row.innerHTML = `
+        <div class="rank-left">
+          <div class="rank-badge">✓</div>
+          <div class="rank-name">${l.lot}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="rank-sub">${formatTimeAgo(l.completedAt)}</div>
+        </div>`;
+      row.addEventListener('click', () => openLotDetail(l));
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderPaceGauge(){
+    const wrap = document.getElementById('paceGaugeRow');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    let todayCount = 0;
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => { if (r && r.at && isToday(r.at)) todayCount++; });
+    });
+
+    // Build a rough typical-day baseline from the last 14 days (excluding today)
+    const dayTotals = {};
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => {
+        if (!r || !r.at) return;
+        const d = new Date(r.at);
+        if (isToday(r.at)) return;
+        const key = d.toISOString().slice(0,10);
+        dayTotals[key] = (dayTotals[key] || 0) + 1;
+      });
+    });
+    const pastDays = Object.values(dayTotals);
+    const avgPerDay = pastDays.length ? pastDays.reduce((a,b)=>a+b,0) / pastDays.length : 0;
+    const target = Math.max(avgPerDay, 1);
+    const pct = Math.min(Math.round((todayCount / target) * 100), 150);
+
+    const ringColor = pct >= 100 ? 'var(--good)' : pct >= 60 ? 'var(--amber)' : 'var(--muted)';
+    const circumference = 2 * Math.PI * 42;
+    const offset = circumference * (1 - Math.min(pct,100)/100);
+
+    wrap.innerHTML = `
+      <div class="pace-gauge">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="8"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="${ringColor}" stroke-width="8"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+            stroke-linecap="round" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="pace-gauge-label">
+          <div class="pace-gauge-num">${todayCount}</div>
+          <div class="pace-gauge-sub">rolls today</div>
+        </div>
+      </div>
+      <div class="pace-gauge-detail">
+        <div class="pace-gauge-pct">${pct}% of typical pace</div>
+        <div class="pace-gauge-baseline">Typical day: ~${Math.round(avgPerDay)} rolls</div>
+      </div>`;
+  }
+
+  function renderTrendChart(){
+    const wrap = document.getElementById('trendChartWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const days = [];
+    for (let i = 13; i >= 0; i--){
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().slice(0,10));
+    }
+    const counts = days.map(day => {
+      let c = 0;
+      ALL_LOTS.forEach(l => {
+        Object.values(l.rolls).forEach(r => { if (r && r.at && r.at.slice(0,10) === day) c++; });
+      });
+      return c;
+    });
+    const max = Math.max(...counts, 1);
+
+    const barsHtml = counts.map((c, i) => {
+      const h = Math.max((c / max) * 100, 3);
+      const d = new Date(days[i]);
+      const label = d.toLocaleDateString(undefined, { day:'numeric', month:'short' });
+      const isToday_ = i === counts.length - 1;
+      return `<div class="trend-bar-col" title="${label}: ${c} rolls">
+        <div class="trend-bar ${isToday_ ? 'today' : ''}" style="height:${h}%;"></div>
+      </div>`;
+    }).join('');
+
+    wrap.innerHTML = '<div class="trend-bars">' + barsHtml + '</div>';
+  }
+
+  function renderLeaderboard(){
+    const wrap = document.getElementById('leaderboardList');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const counts = {};
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => {
+        if (r && r.at && r.by && new Date(r.at) >= weekAgo){
+          counts[r.by] = (counts[r.by] || 0) + 1;
+        }
+      });
+    });
+    const ranked = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    if (ranked.length === 0){
+      wrap.innerHTML = '<div class="empty-board-note">No weighing activity this week yet.</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    ranked.forEach(([name, count], idx) => {
+      const row = document.createElement('div');
+      row.className = 'rank-row';
+      row.innerHTML = `
+        <div class="rank-left">
+          <div class="rank-badge">${medals[idx] || (idx+1)}</div>
+          <div class="rank-name">${name}</div>
+        </div>
+        <div class="rank-sub">${count} roll${count !== 1 ? 's' : ''}</div>`;
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderHeatmap(){
+    const wrap = document.getElementById('heatmapGrid');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const combos = {};
+    ALL_LOTS.forEach(l => {
+      const segs = l.segments && l.segments.length ? l.segments : [{quality:l.quality, colour:l.colour}];
+      segs.forEach(s => {
+        const key = s.quality + ' · ' + s.colour;
+        combos[key] = (combos[key] || 0) + 1;
+      });
+    });
+    const entries = Object.entries(combos).sort((a,b) => b[1]-a[1]).slice(0, 9);
+    if (entries.length === 0){
+      wrap.innerHTML = '<div class="empty-board-note">No data yet.</div>';
+      return;
+    }
+    const max = Math.max(...entries.map(e => e[1]));
+    entries.forEach(([key, count]) => {
+      const intensity = count / max;
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      cell.style.background = `rgba(169, 118, 43, ${0.12 + intensity * 0.55})`;
+      cell.innerHTML = `<div class="heatmap-count">${count}</div><div class="heatmap-label">${key}</div>`;
+      wrap.appendChild(cell);
+    });
+  }
+
+  /* ---------------- AI Daily Summary (template-generated, no real AI call) ---------------- */
+  function renderAiSummary(){
+    const box = document.getElementById('aiSummaryBox');
+    if (!box) return;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yKey = yesterday.toISOString().slice(0,10);
+
+    const yesterdayRolls = [];
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => { if (r && r.at && r.at.slice(0,10) === yKey) yesterdayRolls.push(r); });
+    });
+
+    const byCounts = {};
+    yesterdayRolls.forEach(r => { if (r.by) byCounts[r.by] = (byCounts[r.by]||0)+1; });
+    const topWorker = Object.entries(byCounts).sort((a,b)=>b[1]-a[1])[0];
+
+    const qualityCounts = {};
+    ALL_LOTS.forEach(l => {
+      const segs = l.segments && l.segments.length ? l.segments : [{quality:l.quality, colour:l.colour}];
+      segs.forEach(s => { qualityCounts[s.quality+' '+s.colour] = (qualityCounts[s.quality+' '+s.colour]||0)+1; });
+    });
+    const topMover = Object.entries(qualityCounts).sort((a,b)=>b[1]-a[1])[0];
+
+    // Compare yesterday to the recent daily average to call out a "busiest day" claim if true
+    const dayTotals = {};
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => {
+        if (!r || !r.at) return;
+        const key = r.at.slice(0,10);
+        dayTotals[key] = (dayTotals[key]||0)+1;
+      });
+    });
+    const sortedDays = Object.entries(dayTotals).sort((a,b)=>b[1]-a[1]);
+    const isBusiestDay = sortedDays.length && sortedDays[0][0] === yKey;
+
+    let summary;
+    if (yesterdayRolls.length === 0){
+      summary = "No weighing activity recorded yesterday. Today's a fresh start — check Live Right Now to see what's in progress.";
+    } else {
+      summary = `Yesterday ${isBusiestDay ? 'was your busiest day this month, with' : 'saw'} ${yesterdayRolls.length} roll${yesterdayRolls.length !== 1 ? 's' : ''} weighed.` +
+        (topWorker ? ` ${topWorker[0]} led with ${topWorker[1]} roll${topWorker[1] !== 1 ? 's' : ''}.` : '') +
+        (topMover ? ` ${topMover[0]} was your top mover overall.` : '');
+    }
+    box.textContent = summary;
+    box.dataset.spoken = summary;
+  }
+
+  function speakSummary(){
+    const box = document.getElementById('aiSummaryBox');
+    if (!box || !box.dataset.spoken) return;
+    if (!('speechSynthesis' in window)){
+      alert('Voice narration is not supported in this browser.');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(box.dataset.spoken);
+    utter.rate = 1.0;
+    window.speechSynthesis.speak(utter);
+  }
+
+  /* ---------------- Achievements ---------------- */
+  function computeStreak(){
+    // Consecutive days (including today) with at least one roll weighed
+    let streak = 0;
+    for (let i = 0; i < 60; i++){
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0,10);
+      let found = false;
+      ALL_LOTS.forEach(l => {
+        Object.values(l.rolls).forEach(r => { if (r && r.at && r.at.slice(0,10) === key) found = true; });
+      });
+      if (found) streak++;
+      else break;
+    }
+    return streak;
+  }
+
+  function fastestLotMinutes(){
+    let fastest = null;
+    ALL_LOTS.forEach(l => {
+      if (!l.completedAt || !l.createdAt) return;
+      const mins = (new Date(l.completedAt) - new Date(l.createdAt)) / 60000;
+      if (fastest === null || mins < fastest) fastest = mins;
+    });
+    return fastest;
+  }
+
+  function renderAchievements(){
+    const wrap = document.getElementById('achievementsRow');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const streak = computeStreak();
+    const fastest = fastestLotMinutes();
+    let totalRolls = 0;
+    ALL_LOTS.forEach(l => { totalRolls += Object.keys(l.rolls).length; });
+
+    const badges = [
+      { icon:'🔥', label: streak + '-day streak', earned: streak >= 2 },
+      { icon:'⚡', label: 'Fastest lot: ' + (fastest !== null ? Math.round(fastest) + ' min' : '—'), earned: fastest !== null },
+      { icon:'💯', label: totalRolls + ' rolls all-time', earned: totalRolls >= 50 },
+      { icon:'🏆', label: 'Top performer this week', earned: Object.keys((function(){
+          const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+          const c = {};
+          ALL_LOTS.forEach(l => Object.values(l.rolls).forEach(r => { if (r && r.at && r.by && new Date(r.at) >= weekAgo) c[r.by]=(c[r.by]||0)+1; }));
+          return c;
+        })()).length > 0 },
+    ];
+    badges.forEach(b => {
+      const el = document.createElement('div');
+      el.className = 'achievement-badge' + (b.earned ? ' earned' : ' locked');
+      el.innerHTML = `<span class="achievement-icon">${b.icon}</span><span class="achievement-label">${b.label}</span>`;
+      wrap.appendChild(el);
+    });
+  }
+
+  /* ---------------- Factory floor mini-map ---------------- */
+  function renderFloorMap(){
+    const wrap = document.getElementById('floorMap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const active = ALL_LOTS.filter(l => l.lastActivity && isToday(l.lastActivity) && !lotIsComplete(l));
+    const allLive = ALL_LOTS.filter(l => !lotIsComplete(l)).slice(0, 8);
+    const nodes = allLive.length ? allLive : ALL_LOTS.slice(0, 6);
+
+    nodes.forEach((l, idx) => {
+      const isHot = active.includes(l);
+      const node = document.createElement('div');
+      node.className = 'floor-node' + (isHot ? ' hot' : '');
+      node.style.left = (10 + (idx % 4) * 24) + '%';
+      node.style.top = (15 + Math.floor(idx / 4) * 45) + '%';
+      node.innerHTML = `<span class="floor-node-dot"></span><span class="floor-node-label">${l.lot}</span>`;
+      node.title = l.lot + ' — ' + (isHot ? 'active now' : 'pending');
+      node.addEventListener('click', () => openLotDetail(l));
+      wrap.appendChild(node);
+    });
+  }
+
+  /* ---------------- Ambient context strip ---------------- */
+  const MOTIVATIONAL_QUOTES = [
+    "Precision today saves corrections tomorrow.",
+    "Every roll weighed is a promise kept to a buyer.",
+    "Small consistent gains compound into a great month.",
+    "Quality is remembered long after the price is forgotten."
+  ];
+  function renderContextStrip(){
+    const el = document.getElementById('contextStrip');
+    if (!el) return;
+    const now = new Date();
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const quote = MOTIVATIONAL_QUOTES[now.getDate() % MOTIVATIONAL_QUOTES.length];
+    el.textContent = greeting + ', ' + (currentUser || 'Owner') + ' · ' + quote;
+  }
+
+  /* ---------------- Ambient particle background ---------------- */
+  function initAmbientParticles(){
+    const wrap = document.getElementById('ambientParticles');
+    if (!wrap || wrap.dataset.inited) return;
+    wrap.dataset.inited = '1';
+    for (let i = 0; i < 18; i++){
+      const dot = document.createElement('span');
+      dot.className = 'ambient-dot';
+      dot.style.left = Math.random()*100 + '%';
+      dot.style.top = Math.random()*100 + '%';
+      dot.style.animationDelay = (Math.random()*8) + 's';
+      dot.style.animationDuration = (10 + Math.random()*10) + 's';
+      wrap.appendChild(dot);
+    }
+  }
+
+  /* ---------------- Confetti (fires on lot completion) ---------------- */
+  function fireConfetti(){
+    const canvas = document.getElementById('confettiCanvas');
+    if (!canvas) return;
+    canvas.style.display = 'block';
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    const colors = ['#a9762b','#3c6e52','#9a3324','#c9b48a','#1c2230'];
+    const pieces = [];
+    for (let i = 0; i < 90; i++){
+      pieces.push({
+        x: Math.random()*canvas.width,
+        y: -20 - Math.random()*canvas.height*0.3,
+        size: 5 + Math.random()*5,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        vy: 2 + Math.random()*3,
+        vx: (Math.random()-0.5)*2,
+        rot: Math.random()*360,
+        vrot: (Math.random()-0.5)*10
+      });
+    }
+    let frame = 0;
+    function tick(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      let anyVisible = false;
+      pieces.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+        if (p.y < canvas.height + 30) anyVisible = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI/180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+        ctx.restore();
+      });
+      frame++;
+      if (anyVisible && frame < 240) requestAnimationFrame(tick);
+      else { canvas.style.display = 'none'; ctx.clearRect(0,0,canvas.width,canvas.height); }
+    }
+    tick();
+  }
+
+  /* ---------------- Sound effects ---------------- */
+  let soundEnabled = true;
+  function playTone(freq, duration){
+    if (!soundEnabled) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch(e){ /* audio not available, fail silently */ }
+  }
+  function playSaveDing(){ playTone(880, 0.15); }
+  function playCompleteChime(){ playTone(660, 0.18); setTimeout(() => playTone(990, 0.22), 150); }
+
+  /* ---------------- Worker duties (owner side) ---------------- */
+  function workerNames(){
+    // All non-owner users currently in the system
+    return Object.keys(USERS).filter(u => USERS[u].role === 'worker');
+  }
+
+  function renderWorkerDutiesList(){
+    const wrap = document.getElementById('workerDutiesList');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    workerNames().forEach(name => {
+      const duties = WORKER_DUTIES[name] || { note: '', tasks: [] };
+      const openTasks = (duties.tasks || []).filter(t => !t.done).length;
+      const row = document.createElement('div');
+      row.className = 'worker-duty-row';
+      row.innerHTML = `
+        <div class="worker-duty-left">
+          <div class="worker-duty-name">${name}</div>
+          <div class="worker-duty-sub">${duties.note ? 'Note set' : 'No note'} · ${openTasks} open task${openTasks !== 1 ? 's' : ''}</div>
+        </div>
+        <button class="worker-duty-edit-btn">Assign Duties</button>`;
+      row.querySelector('.worker-duty-edit-btn').addEventListener('click', () => openDutiesModal(name));
+      wrap.appendChild(row);
+    });
+  }
+
+  let dutiesModalWorker = null;
+  let dutiesModalDraft = null;
+
+  function renderDutiesModalTaskList(){
+    const wrap = document.getElementById('dutiesModalTaskList');
+    wrap.innerHTML = '';
+    dutiesModalDraft.tasks.forEach((t, idx) => {
+      const row = document.createElement('div');
+      row.className = 'duties-modal-task-row';
+      row.innerHTML = `
+        <label><input type="checkbox" ${t.done ? 'checked' : ''}> <span>${t.text}</span></label>
+        <button class="duties-modal-task-remove" data-idx="${idx}">×</button>`;
+      row.querySelector('input').addEventListener('change', (e) => { t.done = e.target.checked; });
+      row.querySelector('.duties-modal-task-remove').addEventListener('click', () => {
+        dutiesModalDraft.tasks.splice(idx, 1);
+        renderDutiesModalTaskList();
+      });
+      wrap.appendChild(row);
+    });
+  }
+
+  function openDutiesModal(workerName){
+    dutiesModalWorker = workerName;
+    const existing = WORKER_DUTIES[workerName] || { note: '', tasks: [] };
+    // Work on a draft copy so cancelling (closing without saving) doesn't mutate real data
+    dutiesModalDraft = { note: existing.note, tasks: existing.tasks.map(t => ({...t})) };
+    document.getElementById('dutiesModalTitle').textContent = 'Assign duties — ' + workerName;
+    document.getElementById('dutiesModalNote').value = dutiesModalDraft.note || '';
+    renderDutiesModalTaskList();
+    document.getElementById('dutiesModalBackdrop').classList.add('show');
+  }
+
+  document.getElementById('dutiesModalClose').addEventListener('click', () => {
+    document.getElementById('dutiesModalBackdrop').classList.remove('show');
+  });
+  document.getElementById('dutiesModalAddTaskBtn').addEventListener('click', () => {
+    const input = document.getElementById('dutiesModalNewTask');
+    const text = input.value.trim();
+    if (!text) return;
+    dutiesModalDraft.tasks.push({ text, done: false });
+    input.value = '';
+    renderDutiesModalTaskList();
+  });
+  document.getElementById('dutiesModalSaveBtn').addEventListener('click', () => {
+    dutiesModalDraft.note = document.getElementById('dutiesModalNote').value.trim();
+    WORKER_DUTIES[dutiesModalWorker] = dutiesModalDraft;
+    document.getElementById('dutiesModalBackdrop').classList.remove('show');
+    renderWorkerDutiesList();
+  });
+
+  function renderOwnerHome(){
+    updateOwnerClock();
+    renderContextStrip();
+    initAmbientParticles();
+    renderAiSummary();
+    renderAchievements();
+    renderFloorMap();
+    renderWorkerDutiesList();
+    renderActivityTicker();
+    renderLiveLots();
+    renderPaceGauge();
+    renderMonthStats();
+    renderTrendChart();
+    renderMostReceived();
+    renderRecentCompletions();
+    renderLeaderboard();
+    renderHeatmap();
+  }
+
+  /* ---------------- Owner: Lot Detail drill-in ---------------- */
+  function openLotDetail(lot){
+    document.getElementById('lotDetailTitle').textContent = lot.lot;
+    document.getElementById('ldRolls').textContent = lotDoneCount(lot) + ' / ' + lot.total;
+    document.getElementById('ldAvgWeight').textContent = lotAvg(lot).toFixed(2);
+    const pace = lotAvgMinutesBetweenRolls(lot);
+    document.getElementById('ldPace').textContent = pace !== null ? pace.toFixed(1) : '—';
+
+    const created = lot.createdAt ? new Date(lot.createdAt).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const completed = lot.completedAt ? new Date(lot.completedAt).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}) : 'Still in progress';
+    const daysToComplete = lotDaysToComplete(lot);
+
+    const meta = document.getElementById('lotDetailMeta');
+    meta.innerHTML = '';
+    const rows = [
+      ['Quality / Colour', lotCardLabel(lot)],
+      ['Created', created],
+      ['Completed', completed],
+      ['Days to Complete', daysToComplete !== null ? daysToComplete.toFixed(1) + ' days' : '—'],
+      ['Last Activity', formatTimeAgo(lot.lastActivity)],
+    ];
+    rows.forEach(([k,v]) => {
+      const row = document.createElement('div');
+      row.className = 'detail-meta-row';
+      row.innerHTML = '<span class="k">'+k+'</span><span class="v">'+v+'</span>';
+      meta.appendChild(row);
+    });
+
+    const exportBtn = document.getElementById('lotDetailExportBtn');
+    if (lotIsComplete(lot)){
+      exportBtn.style.display = 'flex';
+      exportBtn.onclick = () => exportLotToOdooCsv(lot);
+    } else {
+      exportBtn.style.display = 'none';
+    }
+
+    showScreen('lotDetailScreen');
+  }
+
+  document.getElementById('backBtnLotDetail').addEventListener('click', () => {
+    renderOwnerHome();
+    showScreen('ownerHomeScreen');
+  });
+
+  document.getElementById('darkModeToggle').addEventListener('click', () => {
+    document.body.classList.toggle('owner-dark-mode');
+    const isDark = document.body.classList.contains('owner-dark-mode');
+    document.getElementById('darkModeToggle').textContent = isDark ? '☀️' : '🌙';
+  });
+
+  document.getElementById('voiceNarrateBtn').addEventListener('click', speakSummary);
+
+  document.getElementById('soundToggle').addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+    if (soundEnabled) playSaveDing();
+  });
+
+  function renderTvModeSlide(){
+    // TV mode reuses the same data renderers but presents them as full-screen slides
+    const slidesWrap = document.getElementById('tvModeSlides');
+    const dotsWrap = document.getElementById('tvModeDots');
+    const slides = [
+      { title: 'This Month', html: document.getElementById('monthStatGrid').outerHTML },
+      { title: 'Live Right Now', html: document.getElementById('liveLotRow').outerHTML },
+      { title: "Today's Pace", html: document.getElementById('paceGaugeRow').outerHTML },
+      { title: 'Staff Leaderboard', html: document.getElementById('leaderboardList').outerHTML },
+      { title: 'Quality × Colour Mix', html: document.getElementById('heatmapGrid').outerHTML },
+    ];
+    slidesWrap.innerHTML = slides.map((s,i) =>
+      `<div class="tv-slide${i===0?' active':''}"><div class="tv-slide-title">${s.title}</div><div class="tv-slide-body">${s.html}</div></div>`
+    ).join('');
+    dotsWrap.innerHTML = slides.map((_,i) => `<span class="tv-dot${i===0?' active':''}"></span>`).join('');
+
+    let current = 0;
+    if (window._tvInterval) clearInterval(window._tvInterval);
+    window._tvInterval = setInterval(() => {
+      const allSlides = slidesWrap.querySelectorAll('.tv-slide');
+      const allDots = dotsWrap.querySelectorAll('.tv-dot');
+      allSlides[current].classList.remove('active');
+      allDots[current].classList.remove('active');
+      current = (current + 1) % allSlides.length;
+      allSlides[current].classList.add('active');
+      allDots[current].classList.add('active');
+    }, 5000);
+  }
+
+  document.getElementById('tvModeToggle').addEventListener('click', () => {
+    renderTvModeSlide();
+    document.getElementById('tvModeOverlay').classList.add('show');
+  });
+  document.getElementById('tvModeExitBtn').addEventListener('click', () => {
+    document.getElementById('tvModeOverlay').classList.remove('show');
+    if (window._tvInterval) clearInterval(window._tvInterval);
+  });
+
+  document.getElementById('ownerNewLotBtn').addEventListener('click', openNewLotScreen);
+  document.getElementById('ownerViewAllBtn').addEventListener('click', () => {
+    renderPending(); renderCompleted();
+    showScreen('dashboardScreen');
+    document.getElementById('ownerBackFromDashBtn').style.display = 'block';
+  });
+  document.getElementById('ownerChipBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('ownerPopover').classList.toggle('show');
+  });
+  document.getElementById('ownerLogoutBtn').addEventListener('click', doLogout);
+  document.getElementById('ownerBackFromDashBtn').addEventListener('click', () => {
+    renderOwnerHome();
+    showScreen('ownerHomeScreen');
+  });
+
+  function ageBand(days){
+    if (days <= 3) return 'age-green';
+    if (days <= 6) return 'age-yellow';
+    return 'age-red';
+  }
+  function daysSince(dateStr){
+    const created = new Date(dateStr);
+    const now = new Date();
+    return Math.floor((now - created) / (1000*60*60*24));
+  }
+
+  function lotCardLabel(lot){
+    if (lot.multiSegment && lot.segments){
+      const qualities = [...new Set(lot.segments.map(s=>s.quality))];
+      if (qualities.length === 1){
+        return qualities[0] + ' · ' + lot.segments.length + ' colours';
+      }
+      return lot.segments.length + ' segments — mixed quality/colour';
+    }
+    return lot.quality + ' · ' + lot.colour;
+  }
+
+  function pctBand(pct){
+    if (pct >= 100) return 'done';
+    if (pct >= 60) return 'high';
+    if (pct >= 25) return 'mid';
+    return 'low';
+  }
+
+  function renderPending(){
+    const wrap = document.getElementById('pendingList');
+    wrap.innerHTML = '';
+    const list = lotPending();
+    document.querySelector('#tabPending .count').textContent = '(' + list.length + ')';
+    const filtered = list.filter(l => lotMatchesQuery(l, pendingSearchQuery));
+    filtered.forEach(l => {
+      const done = lotDoneCount(l);
+      const pct = Math.round((done / l.total) * 100);
+      const band = pctBand(pct);
+      const age = daysSince(l.created);
+      const aBand = ageBand(age);
+      const card = document.createElement('div');
+      card.className = 'lot-card' + (l.priority ? ' priority' : '');
+      card.innerHTML = `
+        ${l.priority ? `<div class="priority-row"><span class="priority-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3v18h2v-7h11l-3-4 3-4H7V3H5z"/></svg>Priority</span></div>` : ''}
+        <div class="top-row">
+          <div>
+            <div class="lot-name">${l.lot}</div>
+            <div class="lot-detail">${lotCardLabel(l)}</div>
+          </div>
+          <div class="lot-card-top-actions">
+            ${currentRole === 'owner' ? `<button class="edit-lot-btn" title="Edit lot details"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>` : ''}
+            ${currentRole === 'owner' ? `<button class="priority-toggle-btn ${l.priority ? 'active' : ''}" title="${l.priority ? 'Remove urgent flag' : 'Mark as urgent'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></svg></button>` : ''}
+            <div class="pct-badge ${band}">${pct}%</div>
+          </div>
+        </div>
+        <div class="bar-track"><div class="bar-fill ${band}" style="width:${pct}%;"></div></div>
+        <div class="lot-meta">
+          <span>${done} of ${l.total} rolls weighed</span>
+          <span>${l.total - done} remaining</span>
+        </div>
+        <div class="age-row">
+          <span class="age-dot ${aBand}"></span>
+          <span class="age-text ${aBand}">${age === 0 ? 'Created today' : age + ' day' + (age>1?'s':'') + ' since created'}</span>
+          <span class="created-by-text">by ${l.createdBy || 'Unknown'}</span>
+        </div>`;
+      card.addEventListener('click', () => openLot(l));
+      const toggleBtn = card.querySelector('.priority-toggle-btn');
+      if (toggleBtn){
+        toggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          l.priority = !l.priority;
+          renderPending();
+        });
+      }
+      const editBtn = card.querySelector('.edit-lot-btn');
+      if (editBtn){
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openEditLotScreen(l);
+        });
+      }
+      wrap.appendChild(card);
+    });
+    if (filtered.length === 0){
+      wrap.innerHTML = pendingSearchQuery
+        ? '<div class="empty-note">No pending lots match "' + pendingSearchQuery + '".</div>'
+        : '<div class="empty-note">No pending lots — everything is weighed.</div>';
+    }
+    renderOwnerNote();
+    renderMyDuties();
+    renderDailyTally();
+    renderMyRecentLots();
+  }
+
+  function renderCompleted(){
+    const wrap = document.getElementById('completedList');
+    wrap.innerHTML = '';
+    const list = lotCompleted();
+    document.querySelector('#tabCompleted .count').textContent = '(' + list.length + ')';
+    const filtered = list.filter(l => lotMatchesQuery(l, completedSearchQuery));
+    filtered.forEach(l => {
+      const avg = lotAvg(l);
+      const age = daysSince(l.created);
+      const card = document.createElement('div');
+      card.className = 'lot-card';
+      card.innerHTML = `
+        <div class="top-row">
+          <div>
+            <div class="lot-name">${l.lot}</div>
+            <div class="lot-detail">${lotCardLabel(l)}</div>
+          </div>
+          <div class="pct-badge done">100%</div>
+        </div>
+        <div class="bar-track"><div class="bar-fill done" style="width:100%;"></div></div>
+        <div class="lot-meta">
+          <span>${l.total} rolls weighed</span>
+          <span>Avg ${avg.toFixed(2)} kg</span>
+        </div>
+        <div class="age-row">
+          <span class="age-text" style="color:var(--muted);">Created ${age === 0 ? 'today' : age + ' day' + (age>1?'s':'') + ' ago'}</span>
+        </div>`;
+      card.addEventListener('click', () => openCompletedSummary(l));
+      wrap.appendChild(card);
+    });
+    if (filtered.length === 0){
+      wrap.innerHTML = completedSearchQuery
+        ? '<div class="empty-note">No completed lots match "' + completedSearchQuery + '".</div>'
+        : '<div class="empty-note">No completed lots yet.</div>';
+    }
+  }
+
+  document.getElementById('tabPending').addEventListener('click', () => {
+    document.getElementById('tabPending').classList.add('active');
+    document.getElementById('tabCompleted').classList.remove('active');
+    document.getElementById('pendingList').classList.remove('hidden-list');
+    document.getElementById('completedList').classList.add('hidden-list');
+    document.getElementById('pendingSearchRow').classList.remove('hidden-row');
+    document.getElementById('completedSearchRow').classList.add('hidden-row');
+  });
+  document.getElementById('tabCompleted').addEventListener('click', () => {
+    document.getElementById('tabCompleted').classList.add('active');
+    document.getElementById('tabPending').classList.remove('active');
+    document.getElementById('completedList').classList.remove('hidden-list');
+    document.getElementById('pendingList').classList.add('hidden-list');
+    document.getElementById('completedSearchRow').classList.remove('hidden-row');
+    document.getElementById('pendingSearchRow').classList.add('hidden-row');
+  });
+
+  /* ---------------- Search ---------------- */
+  function lotMatchesQuery(lot, query){
+    if (!query) return true;
+    const q = query.toLowerCase();
+    const haystack = [
+      lot.lot,
+      lot.quality,
+      lot.colour,
+      lot.multiSegment && lot.segments ? lot.segments.map(s => s.quality + ' ' + s.colour + ' ' + s.ref).join(' ') : ''
+    ].join(' ').toLowerCase();
+    return haystack.includes(q);
+  }
+
+  let pendingSearchQuery = '';
+  let completedSearchQuery = '';
+
+  document.getElementById('pendingSearchInput').addEventListener('input', e => {
+    pendingSearchQuery = e.target.value.trim();
+    document.getElementById('pendingSearchClear').classList.toggle('show', !!pendingSearchQuery);
+    renderPending();
+  });
+  document.getElementById('pendingSearchClear').addEventListener('click', () => {
+    pendingSearchQuery = '';
+    document.getElementById('pendingSearchInput').value = '';
+    document.getElementById('pendingSearchClear').classList.remove('show');
+    renderPending();
+  });
+  document.getElementById('completedSearchInput').addEventListener('input', e => {
+    completedSearchQuery = e.target.value.trim();
+    document.getElementById('completedSearchClear').classList.toggle('show', !!completedSearchQuery);
+    renderCompleted();
+  });
+  document.getElementById('completedSearchClear').addEventListener('click', () => {
+    completedSearchQuery = '';
+    document.getElementById('completedSearchInput').value = '';
+    document.getElementById('completedSearchClear').classList.remove('show');
+    renderCompleted();
+  });
+
+  /* ---------------- Owner note / instructions box ----------------
+     A short free-text note the Owner can set, shown just below the search
+     bar on the dashboard. Hidden entirely for workers when there's no note
+     ("if any"); the Owner always sees the box so they have a place to add
+     one. Re-rendered from renderPending() so it stays in sync with role
+     changes and screen returns without needing its own call sites. */
+  function renderMyDuties(){
+    const box = document.getElementById('myDutiesBox');
+    if (!box) return;
+    // Only ever shown for non-owner roles, and only ever this person's own data
+    if (currentRole === 'owner' || !currentUser){
+      box.style.display = 'none';
+      return;
+    }
+    const duties = WORKER_DUTIES[currentUser];
+    if (!duties || (!duties.note && (!duties.tasks || duties.tasks.length === 0))){
+      box.style.display = 'none';
+      return;
+    }
+    box.style.display = 'block';
+    const noteEl = document.getElementById('myDutiesNote');
+    noteEl.textContent = duties.note || '';
+    noteEl.style.display = duties.note ? 'block' : 'none';
+
+    const tasksWrap = document.getElementById('myDutiesTasks');
+    tasksWrap.innerHTML = '';
+    (duties.tasks || []).forEach((t, idx) => {
+      const row = document.createElement('label');
+      row.className = 'my-duty-task' + (t.done ? ' done' : '');
+      row.innerHTML = `<input type="checkbox" ${t.done ? 'checked' : ''}> <span>${t.text}</span>`;
+      row.querySelector('input').addEventListener('change', (e) => {
+        t.done = e.target.checked;
+        renderMyDuties();
+      });
+      tasksWrap.appendChild(row);
+    });
+  }
+
+  /* ---------------- Worker feature: personal daily tally ---------------- */
+  function renderDailyTally(){
+    const wrap = document.getElementById('dailyTallyRow');
+    if (!wrap) return;
+    if (currentRole === 'owner' || !currentUser){
+      wrap.style.display = 'none';
+      return;
+    }
+    let count = 0, weightSum = 0;
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => {
+        if (r && r.at && r.by === currentUser && isToday(r.at)){
+          count++; weightSum += r.weight;
+        }
+      });
+    });
+    if (count === 0){
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'flex';
+    wrap.innerHTML = `
+      <span class="daily-tally-icon">📊</span>
+      <span class="daily-tally-text">Today: <b>${count}</b> roll${count !== 1 ? 's' : ''} · <b>${weightSum.toFixed(1)}</b> kg</span>`;
+  }
+
+  /* ---------------- Worker feature: my recent lots shortcut ---------------- */
+  function renderMyRecentLots(){
+    const wrap = document.getElementById('myRecentLots');
+    if (!wrap) return;
+    if (currentRole === 'owner' || !currentUser){
+      wrap.style.display = 'none';
+      return;
+    }
+    const touched = ALL_LOTS.filter(l =>
+      Object.values(l.rolls).some(r => r && r.by === currentUser) && !lotIsComplete(l)
+    );
+    touched.sort((a,b) => new Date(b.lastActivity || 0) - new Date(a.lastActivity || 0));
+    const recent = touched.slice(0, 4);
+    if (recent.length === 0){
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'block';
+    wrap.innerHTML = '<div class="my-recent-lots-label">My Recent Lots</div><div class="my-recent-lots-row"></div>';
+    const row = wrap.querySelector('.my-recent-lots-row');
+    recent.forEach(l => {
+      const chip = document.createElement('button');
+      chip.className = 'my-recent-lot-chip';
+      chip.textContent = l.lot;
+      chip.addEventListener('click', () => openLot(l));
+      row.appendChild(chip);
+    });
+  }
+
+  /* ---------------- Worker feature: personal weekly milestone toast ---------------- */
+  function checkPersonalMilestone(){
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    let weekCount = 0;
+    ALL_LOTS.forEach(l => {
+      Object.values(l.rolls).forEach(r => {
+        if (r && r.at && r.by === currentUser && new Date(r.at) >= weekAgo) weekCount++;
+      });
+    });
+    const milestones = [10, 25, 50, 100];
+    if (milestones.includes(weekCount)){
+      showMilestoneToast(weekCount + ' rolls this week!');
+    }
+  }
+
+  function showMilestoneToast(text){
+    const toast = document.createElement('div');
+    toast.className = 'milestone-toast';
+    toast.innerHTML = '🎉 <b>' + text + '</b>';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 400);
+    }, 2800);
+  }
+
+  function renderOwnerNote(){
+    const box = document.getElementById('ownerNoteBox');
+    const textEl = document.getElementById('ownerNoteText');
+    const editBtn = document.getElementById('ownerNoteEditBtn');
+    document.getElementById('ownerNoteEditArea').style.display = 'none';
+    editBtn.style.display = (currentRole === 'owner') ? 'inline-block' : 'none';
+
+    if (!ownerInstructions){
+      if (currentRole !== 'owner'){
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      textEl.textContent = 'No instructions right now — tap Edit to add one for the team.';
+      textEl.style.fontStyle = 'italic';
+      textEl.style.opacity = '0.7';
+      return;
+    }
+    box.style.display = 'block';
+    textEl.style.fontStyle = 'normal';
+    textEl.style.opacity = '1';
+    textEl.textContent = ownerInstructions;
+  }
+
+  document.getElementById('ownerNoteEditBtn').addEventListener('click', () => {
+    document.getElementById('ownerNoteTextarea').value = ownerInstructions;
+    document.getElementById('ownerNoteEditArea').style.display = 'block';
+    document.getElementById('ownerNoteTextarea').focus();
+  });
+  document.getElementById('ownerNoteCancelBtn').addEventListener('click', () => {
+    document.getElementById('ownerNoteEditArea').style.display = 'none';
+  });
+  document.getElementById('ownerNoteSaveBtn').addEventListener('click', () => {
+    ownerInstructions = document.getElementById('ownerNoteTextarea').value.trim();
+    document.getElementById('ownerNoteEditArea').style.display = 'none';
+    renderOwnerNote();
+  });
+
+  /* ---------------- Weighing screen state ---------------- */
+  let activeLot = null;
+  let activeIsCompleted = false;
+  let current = 1;
+  let returnToSummaryAfterSave = false;
+
+  function pad2(n){ return n.toString().padStart(2,'0'); }
+  function rollOf(lot, n){ return lot.rolls[n]; }
+  function rollWeight(lot, n){ const r = rollOf(lot,n); return r ? r.weight : undefined; }
+
+  function buildJumpPanel(lot){
+    const panel = document.getElementById('jumpPanel');
+    panel.innerHTML = '';
+    for (let i=1; i<=lot.total; i++){
+      const w = rollWeight(lot, i);
+      const has = w !== undefined;
+      const seg = segmentForRoll(lot, i);
+      const segLabel = seg ? ` · ${seg.quality}, ${seg.colour}` : '';
+      const item = document.createElement('div');
+      item.className = 'jump-item';
+      item.innerHTML = `
+        <div class="jr-left">
+          <span class="jr-dot ${has ? '' : 'pending'}"></span>
+          <span class="jr-roll">${lot.lot}R${pad2(i)}<span class="jr-seg">${segLabel}</span></span>
+        </div>
+        <span class="jr-weight ${has ? '' : 'empty'}">${has ? w.toFixed(2)+' kg' : 'Pending'}</span>`;
+      item.addEventListener('click', () => {
+        loadRoll(i);
+        panel.classList.remove('show');
+      });
+      panel.appendChild(item);
+    }
+  }
+
+  function updateJumpTrigger(n){
+    const w = rollWeight(activeLot, n);
+    const has = w !== undefined;
+    const label = document.getElementById('jumpTriggerLabel');
+    label.innerHTML = activeLot.lot + 'R' + pad2(n) +
+      '<span class="roll-pill-status ' + (has ? 'done' : 'pending') + '">' +
+      (has ? w.toFixed(2) + ' kg' : 'Pending') + '</span>';
+  }
+
+  document.getElementById('jumpTrigger').addEventListener('click', () => {
+    document.getElementById('jumpPanel').classList.toggle('show');
+  });
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('jumpPanel');
+    const trigger = document.getElementById('jumpTrigger');
+    if (!panel.contains(e.target) && !trigger.contains(e.target)){
+      panel.classList.remove('show');
+    }
+  });
+
+  function refreshSaveButton(){
+    const already = rollWeight(activeLot, current) !== undefined;
+    const btn = document.getElementById('saveBtn');
+    const banner = document.getElementById('editBanner');
+    const foot = document.getElementById('entryFootnote');
+    if (already){
+      btn.textContent = 'Update & Reprint Sticker';
+      banner.classList.add('show');
+      foot.innerHTML = 'Reprints the sticker with the corrected weight.<br>Lot summary updates automatically.';
+    } else {
+      btn.textContent = 'Save & Print Sticker';
+      banner.classList.remove('show');
+      foot.innerHTML = 'Sticker prints at the warehouse station.<br>Next pending roll loads automatically.';
+    }
+  }
+
+  function segmentForRoll(lot, n){
+    if (!lot.segments) return null;
+    return lot.segments.find(s => n >= s.from && n <= s.to) || null;
+  }
+
+  function rollInternalRef(lot, n, existingRoll){
+    if (existingRoll && existingRoll.ref) return existingRoll.ref;
+    const seg = segmentForRoll(lot, n);
+    if (seg) return seg.ref;
+    if (lot.defaultRef) return lot.defaultRef;
+    return 'MKF26-I' + (800 + (ALL_LOTS.indexOf(lot)+1)) + '-A' + pad2(n);
+  }
+
+  function rollQualityColour(lot, n){
+    const seg = segmentForRoll(lot, n);
+    if (seg) return { quality: seg.quality, colour: seg.colour };
+    return { quality: lot.quality, colour: lot.colour };
+  }
+
+  function loadRoll(n){
+    current = n;
+    const existing = rollOf(activeLot, n);
+    const qc = rollQualityColour(activeLot, n);
+    document.getElementById('rollNoVal').textContent = activeLot.lot + 'R' + pad2(n);
+    document.getElementById('refVal').textContent = rollInternalRef(activeLot, n, existing);
+    document.getElementById('qualityVal').textContent = qc.quality;
+    document.getElementById('colourVal').innerHTML = '<span class="swatch"></span>' + qc.colour;
+    document.getElementById('progressText').textContent = 'Roll ' + n;
+    document.getElementById('progressTotal').textContent = activeLot.total;
+    document.getElementById('progressFill').style.width = (((n-1)/activeLot.total)*100) + '%';
+    document.getElementById('weightInput').value = existing ? existing.weight.toFixed(2) : '';
+    document.getElementById('remarkInput').value = existing && existing.remark ? existing.remark : '';
+    document.getElementById('weightError').classList.remove('show');
+
+    // Worker feature: offer to repeat the previous roll's weight, only when
+    // this roll itself isn't already weighed (no point repeating onto a done roll)
+    const prevRoll = rollOf(activeLot, n - 1);
+    const repeatBtn = document.getElementById('repeatWeightBtn');
+    if (!existing && prevRoll && prevRoll.weight !== undefined){
+      repeatBtn.style.display = 'block';
+      repeatBtn.textContent = '↻ Repeat last weight (' + prevRoll.weight.toFixed(2) + ' kg)';
+      repeatBtn.dataset.weight = prevRoll.weight;
+    } else {
+      repeatBtn.style.display = 'none';
+    }
+
+    updateJumpTrigger(n);
+    refreshSaveButton();
+
+    // Keep hands-free mode in sync if the worker manually jumps to a
+    // different roll mid-session — restart the announce/listen cycle fresh
+    // on whatever roll they actually land on, rather than leaving an old
+    // listening session running against a roll they've since left.
+    if (handsFreeActive){
+      if (handsFreeRecognition){ try { handsFreeRecognition.abort(); } catch(e){} }
+      window.speechSynthesis && window.speechSynthesis.cancel();
+      handsFreeAnnounceRoll();
+    }
+  }
+
+  function nextPendingFrom(lot, startAfter){
+    for (let i = startAfter+1; i <= lot.total; i++){
+      if (rollWeight(lot, i) === undefined) return i;
+    }
+    for (let i = 1; i <= lot.total; i++){
+      if (rollWeight(lot, i) === undefined) return i;
+    }
+    return null;
+  }
+
+  function openLot(lot){
+    activeLot = lot;
+    activeIsCompleted = false;
+    returnToSummaryAfterSave = false;
+    const startRoll = nextPendingFrom(lot, 0) || 1;
+    document.getElementById('entryLotTag').textContent = 'Merakki · ' + lot.lot;
+    buildJumpPanel(lot);
+    loadRoll(startRoll);
+    showScreen('entryScreen');
+  }
+
+  function formatWeighedAt(iso){
+    if (!iso) return '';
+    const d = new Date(iso);
+    const datePart = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    const timePart = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return datePart + ', ' + timePart;
+  }
+
+  function renderSummaryTable(lot, total){
+    const tbl = document.getElementById('rollTable');
+    tbl.querySelectorAll('.trow:not(.head)').forEach(r => r.remove());
+    for (let i=1; i<=total; i++){
+      const r = rollOf(lot, i);
+      const w = r ? r.weight : undefined;
+      const row = document.createElement('div');
+      row.className = 'trow';
+      const correctedTag = (r && r.corrected) ? '<span class="corrected-tag">corrected</span>' : '';
+      const notPrintedTag = (r && r.printed === false) ? '<span class="remark-tag" style="color:var(--muted); background:var(--line);">not printed</span>' : '';
+      const remarkTag = (r && r.remark) ? '<br><span class="remark-tag">' + r.remark + '</span>' : '';
+      const byTag = (r && r.by) ? '<span class="weighed-by-tag">by <b>' + r.by + '</b></span>' : '';
+      const atTag = (r && r.at) ? '<br><span class="weighed-at-tag">' + formatWeighedAt(r.at) + '</span>' : '';
+      row.innerHTML =
+        '<span class="rno">' + lot.lot + 'R' + pad2(i) + correctedTag + notPrintedTag + remarkTag + byTag + atTag + '</span>' +
+        '<span class="wt">' + (w!==undefined ? w.toFixed(2)+' kg' : '—') + '</span>' +
+        '<span><button class="edit-link" data-roll="' + i + '">Edit</button></span>';
+      tbl.appendChild(row);
+    }
+    tbl.querySelectorAll('.edit-link').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const n = parseInt(e.target.getAttribute('data-roll'), 10);
+        returnToSummaryAfterSave = true;
+        buildJumpPanel(lot);
+        loadRoll(n);
+        showScreen('entryScreen');
+      });
+    });
+  }
+
+  function showLotSummary(lot, titleSuffix){
+    document.getElementById('summaryTitle').textContent = lot.lot + ' — ' + titleSuffix;
+    document.getElementById('summaryCreatedBy').textContent = 'Created by ' + (lot.createdBy || 'Unknown');
+    const vals = Object.values(lot.rolls).map(r=>r.weight).filter(v => v !== undefined);
+    const total = vals.reduce((a,b)=>a+b, 0);
+    document.getElementById('statRolls').textContent = lot.total;
+    document.getElementById('totalWeight').textContent = total.toFixed(2);
+    document.getElementById('avgWeight').textContent = (vals.length ? total/vals.length : 0).toFixed(2);
+    renderSummaryTable(lot, lot.total);
+    showScreen('summaryScreen');
+    renderPending();
+    renderCompleted();
+  }
+
+  /* ---------------- Odoo CSV export ----------------
+     name, product_id, x_Epc_Number, x_Roll_Weight, x_Roll_Remark,
+     x_Roll_Status, ref, COLOUR — matches the existing Odoo import format.
+     EPC = ASCII hex of the roll batch name, uppercase. All lots created
+     here are MK (never MKF), so no lot-name stripping is needed. */
+  function asciiHexUpper(str){
+    let out = '';
+    for (let i = 0; i < str.length; i++){
+      out += str.charCodeAt(i).toString(16).toUpperCase().padStart(2, '0');
+    }
+    return out;
+  }
+
+  function csvEscape(val){
+    const s = (val === null || val === undefined) ? '' : String(val);
+    if (/[",\n]/.test(s)){
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function buildOdooCsvContent(lot){
+    const headers = ['name','product_id','x_Epc_Number','x_Roll_Weight','x_Roll_Remark','x_Roll_Status','ref','COLOUR'];
+    const rows = [headers.join(',')];
+    for (let i = 1; i <= lot.total; i++){
+      const r = rollOf(lot, i);
+      if (!r) continue;
+      const rollName = lot.lot + 'R' + pad2(i);
+      const qc = rollQualityColour(lot, i);
+      const ref = rollInternalRef(lot, i, r);
+      const row = [
+        rollName, qc.quality, asciiHexUpper(rollName), r.weight.toFixed(2),
+        r.remark || '', 'FRESH', ref, qc.colour
+      ];
+      rows.push(row.map(csvEscape).join(','));
+    }
+    return rows.join('\r\n');
+  }
+
+  function exportLotToOdooCsv(lot){
+    const csvContent = buildOdooCsvContent(lot);
+    const filename = lot.lot + '_odoo_export.csv';
+
+    /* Preview/sandboxed environments often block a programmatic <a download>
+       click silently — there's no reliable way to detect that from inside the
+       page. So we always also show the CSV on screen with a Copy button,
+       and try the normal download as a bonus rather than the only path. */
+    try {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (err){
+      console.warn('Direct download failed, falling back to on-screen export.', err);
+    }
+
+    showCsvExportModal(filename, csvContent);
+  }
+
+  function showCsvExportModal(filename, csvContent){
+    document.getElementById('csvModalFilename').textContent = filename;
+    document.getElementById('csvModalContent').value = csvContent;
+    document.getElementById('csvExportModal').classList.add('show');
+  }
+
+  document.getElementById('csvModalClose').addEventListener('click', () => {
+    document.getElementById('csvExportModal').classList.remove('show');
+  });
+  document.getElementById('csvModalCopyBtn').addEventListener('click', () => {
+    const ta = document.getElementById('csvModalContent');
+    ta.select();
+    try {
+      document.execCommand('copy');
+      const btn = document.getElementById('csvModalCopyBtn');
+      const original = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    } catch (err){
+      console.warn('Copy failed', err);
+    }
+  });
+  document.getElementById('csvModalDownloadAgainBtn').addEventListener('click', () => {
+    const csvContent = document.getElementById('csvModalContent').value;
+    const filename = document.getElementById('csvModalFilename').textContent;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+
+  document.getElementById('exportOdooBtn').addEventListener('click', () => {
+    if (activeLot) exportLotToOdooCsv(activeLot);
+  });
+
+  function openCompletedSummary(lot){
+    activeLot = lot;
+    activeIsCompleted = true;
+    document.getElementById('entryLotTag').textContent = 'Merakki · ' + lot.lot;
+    showLotSummary(lot, 'Completed');
+  }
+
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+    document.getElementById(id).classList.add('show');
+    document.body.classList.toggle('owner-view', id === 'ownerHomeScreen');
+  }
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (handsFreeActive) stopHandsFree();
+    renderPending(); renderCompleted(); showScreen('dashboardScreen');
+  });
+  document.getElementById('backBtnSummary').addEventListener('click', () => { renderPending(); renderCompleted(); showScreen('dashboardScreen'); });
+
+  document.getElementById('jumpBtn').addEventListener('click', () => {
+    document.getElementById('jumpPanel').classList.toggle('show');
+  });
+
+  const MIN_WEIGHT = 1;
+  const MAX_WEIGHT = 50;
+
+  /* Auto-insert a decimal point after 2 digits as the operator types,
+     e.g. typing "2580" displays as "25.80". Backspacing re-shifts naturally
+     since we always rebuild from the raw digit string. */
+  document.getElementById('weightInput').addEventListener('input', function(e){
+    let digits = e.target.value.replace(/[^\d]/g, '').slice(0, 4); // up to 4 digits = NN.NN
+    let formatted = digits;
+    if (digits.length > 2){
+      formatted = digits.slice(0, digits.length - 2) + '.' + digits.slice(-2);
+    }
+    e.target.value = formatted;
+  });
+
+  function performSave(shouldPrint, silent){
+    const raw = document.getElementById('weightInput').value;
+    const w = parseFloat(raw);
+    const errBox = document.getElementById('weightError');
+
+    if (raw === '' || isNaN(w)){
+      errBox.textContent = 'Enter a weight to continue.';
+      errBox.classList.add('show');
+      return false;
+    }
+    if (w < MIN_WEIGHT || w > MAX_WEIGHT){
+      errBox.textContent = 'Weight must be between ' + MIN_WEIGHT + ' kg and ' + MAX_WEIGHT + ' kg.';
+      errBox.classList.add('show');
+      return false;
+    }
+    errBox.classList.remove('show');
+
+    const weightVal = +w.toFixed(2);
+    const remarkVal = document.getElementById('remarkInput').value.trim();
+    const existing = rollOf(activeLot, current);
+    const wasAlreadySaved = existing !== undefined;
+    const qc = rollQualityColour(activeLot, current);
+
+    activeLot.rolls[current] = {
+      weight: weightVal,
+      remark: remarkVal || null,
+      by: currentUser,
+      corrected: wasAlreadySaved ? true : false,
+      printed: shouldPrint ? true : (wasAlreadySaved ? existing.printed : false),
+      at: wasAlreadySaved ? existing.at : new Date().toISOString(),
+      correctedAt: wasAlreadySaved ? new Date().toISOString() : null
+    };
+
+    if (!wasAlreadySaved) lotMarkActivity(activeLot);
+
+    // Worker feature: short vibration on save, useful in a noisy environment
+    if (navigator.vibrate) navigator.vibrate(60);
+
+    // Worker feature: small celebratory moment on personal weekly milestones
+    if (!wasAlreadySaved && currentRole !== 'owner'){
+      checkPersonalMilestone();
+    }
+
+    // Hands-free voice mode saves silently and handles its own flow/navigation
+    // entirely through speech — showing then immediately hiding the normal
+    // confirm screen would just flash on screen for no benefit.
+    if (silent) return true;
+
+    document.getElementById('confirmRoll').textContent = activeLot.lot + 'R' + pad2(current);
+    document.getElementById('confirmDetail').textContent =
+      weightVal.toFixed(2) + ' kg · ' + qc.quality + ' · ' + qc.colour +
+      (remarkVal ? ' · ' + remarkVal : '') + ' · by ' + currentUser;
+
+    const checkIcon = document.querySelector('#confirmScreen .check');
+    if (shouldPrint){
+      document.querySelector('#confirmScreen h2').textContent =
+        wasAlreadySaved ? 'Sticker Reprinted' : 'Sticker Sent to Printer';
+      checkIcon.classList.remove('no-print-icon');
+    } else {
+      document.querySelector('#confirmScreen h2').textContent = 'Weight Saved — No Sticker Printed';
+      checkIcon.classList.add('no-print-icon');
+    }
+
+    showScreen('confirmScreen');
+    return true;
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', () => performSave(true));
+  document.getElementById('saveNoPrintBtn').addEventListener('click', () => performSave(false));
+
+  /* ---------------- Hands-free voice weighing mode ---------------- */
+  let handsFreeActive = false;
+  let handsFreeRecognition = null;
+  let handsFreeStage = 'idle'; // 'idle' | 'awaiting_weight' | 'awaiting_confirm'
+  let handsFreePendingWeight = null;
+
+  function speak(text, onEnd){
+    if (!('speechSynthesis' in window)){
+      if (onEnd) onEnd();
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1.0;
+    if (onEnd) utter.onend = onEnd;
+    window.speechSynthesis.speak(utter);
+  }
+
+  function getSpeechRecognitionClass(){
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
+
+  // Parses a worker's spoken phrase into a single weight number, handling
+  // common natural ways a number might come out ("twenty four point five",
+  // "24.5", "24 point 5 kg", etc). This is intentionally forgiving — if it
+  // can't confidently find one clear number, it returns null and we re-ask
+  // rather than guess and risk saving a wrong weight.
+  function parseSpokenWeight(transcript){
+    const text = transcript.toLowerCase().trim();
+    const numberWords = {
+      zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10,
+      eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17,
+      eighteen:18, nineteen:19, twenty:20, thirty:30, forty:40, fifty:50
+    };
+    // Prefer a plain digit-based number if one is clearly present (most reliable case)
+    const digitMatch = text.match(/(\d+(\.\d+)?)/);
+    if (digitMatch) return parseFloat(digitMatch[1]);
+
+    // Fall back to spoken word numbers, e.g. "twenty four point five"
+    const words = text.replace(/kg|kilograms?/g, '').trim().split(/\s+/);
+    let whole = null, decimal = null, afterPoint = false;
+    for (const w of words){
+      if (w === 'point' || w === 'decimal'){ afterPoint = true; continue; }
+      if (numberWords[w] === undefined) continue;
+      if (!afterPoint){
+        whole = (whole || 0) + numberWords[w];
+      } else {
+        decimal = (decimal === null ? '' : decimal) + numberWords[w];
+      }
+    }
+    if (whole === null) return null;
+    return decimal !== null ? parseFloat(whole + '.' + decimal) : whole;
+  }
+
+  function handsFreeListenOnce(onResult){
+    const SR = getSpeechRecognitionClass();
+    if (!SR){
+      stopHandsFree('Voice recognition is not supported in this browser. Try Chrome on Android.');
+      return;
+    }
+    if (handsFreeRecognition) { try { handsFreeRecognition.abort(); } catch(e){} }
+    let constructed;
+    try {
+      constructed = new SR();
+    } catch(e){
+      stopHandsFree('Could not start voice recognition on this device/browser. Try Chrome on Android.');
+      return;
+    }
+    handsFreeRecognition = constructed;
+    handsFreeRecognition.lang = 'en-IN';
+    handsFreeRecognition.interimResults = false;
+    handsFreeRecognition.maxAlternatives = 1;
+    handsFreeRecognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      onResult(transcript);
+    };
+    handsFreeRecognition.onerror = (e) => {
+      // 'not-allowed' / 'service-not-allowed' mean the browser or user genuinely
+      // blocked microphone access — that's a real stop, not a transient blip.
+      if (e && (e.error === 'not-allowed' || e.error === 'service-not-allowed')){
+        stopHandsFree('Microphone access was blocked. Please allow microphone permission and try again.');
+        return;
+      }
+      // Other errors (e.g. brief silence/no-speech) are normal during continuous
+      // listening — just listen again rather than treat them as fatal.
+      if (handsFreeActive) handsFreeListenOnce(onResult);
+    };
+    try {
+      handsFreeRecognition.start();
+    } catch(e){
+      stopHandsFree('Voice recognition failed to start on this device. Try Chrome on Android.');
+    }
+  }
+
+  function handsFreeAnnounceRoll(){
+    if (!handsFreeActive) return;
+    if (lotIsComplete(activeLot)){
+      speak('Lot complete.', () => stopHandsFree());
+      return;
+    }
+    handsFreeStage = 'awaiting_weight';
+    document.getElementById('handsfreeStatusText').textContent = 'Roll ' + current + ' — say the weight';
+    speak('Roll ' + current, () => {
+      handsFreeListenOnce(handleHandsFreeTranscript);
+    });
+  }
+
+  function handleHandsFreeTranscript(transcript){
+    if (!handsFreeActive) return;
+    const lower = transcript.toLowerCase();
+
+    if (lower.includes('exit')){
+      stopHandsFree();
+      return;
+    }
+
+    if (handsFreeStage === 'awaiting_weight'){
+      const weight = parseSpokenWeight(transcript);
+      if (weight === null || weight < MIN_WEIGHT || weight > MAX_WEIGHT){
+        document.getElementById('handsfreeStatusText').textContent = "Didn't catch a valid weight — try again";
+        speak("Sorry, I didn't catch that. Please say the weight again.", () => {
+          handsFreeListenOnce(handleHandsFreeTranscript);
+        });
+        return;
+      }
+      handsFreePendingWeight = weight;
+      handsFreeStage = 'awaiting_confirm';
+      document.getElementById('handsfreeStatusText').textContent = weight.toFixed(2) + ' kg — say yes or no';
+      speak(weight.toFixed(2) + ' kilograms. Confirm?', () => {
+        handsFreeListenOnce(handleHandsFreeTranscript);
+      });
+      return;
+    }
+
+    if (handsFreeStage === 'awaiting_confirm'){
+      if (lower.includes('yes') || lower.includes('confirm')){
+        document.getElementById('weightInput').value = handsFreePendingWeight.toFixed(2);
+        const saved = performSave(false, true); // silent: no confirm-screen flash
+        if (!saved){
+          // Validation somehow failed even though we pre-checked the range —
+          // re-ask rather than silently skip this roll.
+          handsFreeStage = 'awaiting_weight';
+          speak('Something went wrong saving that. Please say the weight again.', () => {
+            handsFreeListenOnce(handleHandsFreeTranscript);
+          });
+          return;
+        }
+        handsFreeStage = 'idle';
+        const next = nextPendingFrom(activeLot, current);
+        if (next === null){
+          handsFreeAnnounceRoll(); // lot has no more pending rolls — this will detect completion and stop gracefully
+        } else {
+          loadRoll(next); // loadRoll itself re-announces automatically when hands-free is active
+        }
+      } else if (lower.includes('no') || lower.includes('redo')){
+        handsFreeStage = 'awaiting_weight';
+        document.getElementById('handsfreeStatusText').textContent = 'Roll ' + current + ' — say the weight';
+        speak('Okay, say the weight again.', () => {
+          handsFreeListenOnce(handleHandsFreeTranscript);
+        });
+      } else {
+        // Didn't clearly hear yes/no — ask again rather than guess
+        speak('Please say yes to confirm, or no to redo.', () => {
+          handsFreeListenOnce(handleHandsFreeTranscript);
+        });
+      }
+    }
+  }
+
+  function startHandsFree(){
+    const SR = getSpeechRecognitionClass();
+    if (!SR){
+      document.getElementById('handsfreeToggleBtn').style.display = 'none';
+      const status = document.getElementById('handsfreeStatus');
+      status.style.display = 'flex';
+      status.classList.add('unsupported');
+      document.getElementById('handsfreeStatusText').textContent =
+        '⚠ Voice mode needs Chrome on Android — not supported on this browser.';
+      document.getElementById('handsfreeExitBtn').textContent = 'Close';
+      return;
+    }
+    handsFreeActive = true;
+    document.getElementById('handsfreeToggleBtn').style.display = 'none';
+    document.getElementById('handsfreeStatus').style.display = 'flex';
+    document.getElementById('handsfreeStatus').classList.remove('unsupported');
+    handsFreeAnnounceRoll();
+  }
+
+  function stopHandsFree(message){
+    handsFreeActive = false;
+    handsFreeStage = 'idle';
+    if (handsFreeRecognition){ try { handsFreeRecognition.abort(); } catch(e){} }
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    document.getElementById('handsfreeToggleBtn').style.display = 'block';
+    document.getElementById('handsfreeStatus').style.display = 'none';
+    document.getElementById('handsfreeStatus').classList.remove('unsupported');
+    document.getElementById('handsfreeExitBtn').textContent = 'Exit';
+    if (message) alert(message);
+  }
+
+  document.getElementById('handsfreeToggleBtn').addEventListener('click', startHandsFree);
+  document.getElementById('handsfreeExitBtn').addEventListener('click', () => stopHandsFree());
+
+  document.getElementById('repeatWeightBtn').addEventListener('click', function(){
+    const w = this.dataset.weight;
+    if (!w) return;
+    document.getElementById('weightInput').value = parseFloat(w).toFixed(2);
+    refreshSaveButton();
+  });
+
+  document.getElementById('remarkChipRow').addEventListener('click', (e) => {
+    const chip = e.target.closest('.remark-chip');
+    if (!chip) return;
+    const input = document.getElementById('remarkInput');
+    // Toggle: tapping the same chip twice clears the remark, otherwise sets it
+    if (input.value === chip.dataset.remark){
+      input.value = '';
+      chip.classList.remove('active');
+    } else {
+      input.value = chip.dataset.remark;
+      document.querySelectorAll('.remark-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    }
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', function(){
+    if (returnToSummaryAfterSave){
+      returnToSummaryAfterSave = false;
+      showLotSummary(activeLot, activeIsCompleted ? 'Completed' : 'Lot Complete');
+      return;
+    }
+
+    const allDone = lotIsComplete(activeLot);
+
+    if (allDone){
+      showLotSummary(activeLot, 'Lot Complete');
+      return;
+    }
+    const next = nextPendingFrom(activeLot, current);
+    buildJumpPanel(activeLot);
+    loadRoll(next);
+    showScreen('entryScreen');
+    document.getElementById('weightInput').focus();
+  });
+
+  /* ================= NEW LOT CREATION ================= */
+
+  function lotNumberExists(fullLotNumber){
+    return ALL_LOTS.some(l => l.lot.toUpperCase() === fullLotNumber.toUpperCase());
+  }
+
+  function openNewLotScreen(){
+    editingLot = null;
+    document.querySelector('#newLotScreen h1').textContent = 'New Lot';
+    document.getElementById('createLotBtn').textContent = 'Create Lot';
+    document.querySelector('.tabs').style.display = 'flex';
+    document.getElementById('manualError').classList.remove('show');
+    document.getElementById('nlLotSuffix').value = '';
+    document.getElementById('nlLotSuffix').disabled = false;
+    document.getElementById('nlTotalRolls').value = '';
+    document.getElementById('uploadError').classList.remove('show');
+    document.getElementById('filePreview').style.display = 'none';
+    document.getElementById('confirmUploadBtn').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+    pendingUploadLot = null;
+    segments = [];
+    renderSegments();
+    addSegment(); // start with one empty segment
+    // default back to Manual Entry tab
+    document.getElementById('tabManual').classList.add('active');
+    document.getElementById('tabUpload').classList.remove('active');
+    document.getElementById('manualPane').style.display = 'flex';
+    document.getElementById('uploadPane').style.display = 'none';
+    showScreen('newLotScreen');
+  }
+
+  function openEditLotScreen(lot){
+    editingLot = lot;
+    document.querySelector('#newLotScreen h1').textContent = 'Edit Lot';
+    document.getElementById('createLotBtn').textContent = 'Save Changes';
+    // Editing only applies to a lot's own structure — file upload doesn't apply here
+    document.querySelector('.tabs').style.display = 'none';
+    document.getElementById('manualError').classList.remove('show');
+
+    // Lot number suffix is shown but locked — changing it would effectively
+    // make this a different lot, which isn't what "edit" should do
+    const suffix = lot.lot.replace(/^MK26L/, '');
+    document.getElementById('nlLotSuffix').value = suffix;
+    document.getElementById('nlLotSuffix').disabled = true;
+    document.getElementById('nlTotalRolls').value = lot.total;
+
+    // Pre-fill segments from the existing lot, falling back to a single
+    // segment built from the lot's plain quality/colour if it predates
+    // the multi-segment structure
+    const existingSegs = (lot.segments && lot.segments.length)
+      ? lot.segments.map(s => ({ quality: s.quality, colour: s.colour, ref: s.ref, count: String(s.to - s.from + 1) }))
+      : [{ quality: lot.quality, colour: lot.colour, ref: '', count: String(lot.total) }];
+    segments = existingSegs;
+    renderSegments();
+
+    document.getElementById('tabManual').classList.add('active');
+    document.getElementById('tabUpload').classList.remove('active');
+    document.getElementById('manualPane').style.display = 'flex';
+    document.getElementById('uploadPane').style.display = 'none';
+    showScreen('newLotScreen');
+  }
+
+  /* ---------------- Segments ---------------- */
+  let segments = []; // { quality, colour, ref, count }
+  let editingLot = null; // set when editing an existing lot instead of creating a new one
+
+  const QUALITY_OPTIONS = ["Valentino", "Mario Rib", "Semi Zurich"];
+  const COLOUR_OPTIONS = ["Black", "White", "Mint", "Navy Blue", "Sky", "Wine", "Beige", "Mouse", "Light Grey", "Light Pista", "Purple"];
+
+  function addSegment(){
+    segments.push({ quality: QUALITY_OPTIONS[0], colour: COLOUR_OPTIONS[0], ref: '', count: '' });
+    renderSegments();
+  }
+
+  function updateSegmentProgress(){
+    const total = parseInt(document.getElementById('nlTotalRolls').value, 10) || 0;
+    const allocated = segments.reduce((sum, s) => sum + (parseInt(s.count,10) || 0), 0);
+    const box = document.getElementById('segmentProgress');
+    box.classList.remove('match','over');
+    if (!total){
+      box.textContent = allocated + ' rolls allocated so far — set Total Rolls above';
+    } else if (allocated === total){
+      box.textContent = allocated + ' of ' + total + ' rolls allocated — matches exactly ✓';
+      box.classList.add('match');
+    } else if (allocated > total){
+      box.textContent = allocated + ' of ' + total + ' rolls allocated — ' + (allocated-total) + ' too many';
+      box.classList.add('over');
+    } else {
+      box.textContent = allocated + ' of ' + total + ' rolls allocated — ' + (total-allocated) + ' remaining';
+    }
+  }
+
+  function computeRanges(){
+    let cursor = 1;
+    return segments.map(seg => {
+      const count = parseInt(seg.count, 10) || 0;
+      const range = count > 0 ? { from: cursor, to: cursor + count - 1 } : null;
+      if (count > 0) cursor += count;
+      return range;
+    });
+  }
+
+  function refreshRangePills(){
+    const ranges = computeRanges();
+    document.querySelectorAll('.segment-card').forEach((card, idx) => {
+      const pill = card.querySelector('.segment-range-pill');
+      const r = ranges[idx];
+      if (r){
+        pill.textContent = 'Rolls ' + r.from + '–' + r.to;
+        pill.classList.remove('empty');
+      } else {
+        pill.textContent = 'Rolls —';
+        pill.classList.add('empty');
+      }
+    });
+  }
+
+  function renderSegments(){
+    const wrap = document.getElementById('segmentsList');
+    wrap.innerHTML = '';
+    const ranges = computeRanges();
+
+    segments.forEach((seg, idx) => {
+      const r = ranges[idx];
+      const rangeLabel = r ? ('Rolls ' + r.from + '–' + r.to) : 'Rolls —';
+
+      const card = document.createElement('div');
+      card.className = 'segment-card';
+      card.innerHTML = `
+        <div class="segment-card-head">
+          <span class="segment-title">Segment ${idx+1}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="segment-range-pill ${r?'':'empty'}">${rangeLabel}</span>
+            ${segments.length > 1 ? '<button class="remove-segment-btn" data-idx="'+idx+'">Remove</button>' : ''}
+          </div>
+        </div>
+        <div class="segment-row">
+          <div>
+            <span class="segment-mini-label">Quality</span>
+            <select class="nl-select seg-quality" data-idx="${idx}">
+              ${QUALITY_OPTIONS.map(q => `<option ${q===seg.quality?'selected':''}>${q}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <span class="segment-mini-label">Colour</span>
+            <select class="nl-select seg-colour" data-idx="${idx}">
+              ${COLOUR_OPTIONS.map(c => `<option ${c===seg.colour?'selected':''}>${c}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="segment-row">
+          <div>
+            <span class="segment-mini-label">Internal Reference</span>
+            <input class="nl-input seg-ref" data-idx="${idx}" type="text" placeholder="MKF26-..." value="${seg.ref}">
+          </div>
+          <div>
+            <span class="segment-mini-label">Rolls in segment</span>
+            <input class="nl-input seg-count" data-idx="${idx}" type="number" inputmode="numeric" min="1" placeholder="e.g. 8" value="${seg.count}">
+          </div>
+        </div>`;
+      wrap.appendChild(card);
+    });
+
+    wrap.querySelectorAll('.seg-quality').forEach(el => el.addEventListener('change', e => {
+      segments[+e.target.dataset.idx].quality = e.target.value;
+    }));
+    wrap.querySelectorAll('.seg-colour').forEach(el => el.addEventListener('change', e => {
+      segments[+e.target.dataset.idx].colour = e.target.value;
+    }));
+    wrap.querySelectorAll('.seg-ref').forEach(el => el.addEventListener('input', e => {
+      segments[+e.target.dataset.idx].ref = e.target.value;
+    }));
+    /* IMPORTANT: typing a roll count must NOT rebuild the input list — doing so
+       destroys and recreates the focused field, which closes the on-screen
+       keyboard on phones/tablets after every keystroke. Only the small range
+       pills and the progress box are patched in place. */
+    wrap.querySelectorAll('.seg-count').forEach(el => el.addEventListener('input', e => {
+      segments[+e.target.dataset.idx].count = e.target.value;
+      refreshRangePills();
+      updateSegmentProgress();
+    }));
+    wrap.querySelectorAll('.remove-segment-btn').forEach(el => el.addEventListener('click', e => {
+      segments.splice(+e.target.dataset.idx, 1);
+      renderSegments();
+      updateSegmentProgress();
+    }));
+
+    updateSegmentProgress();
+  }
+
+  document.getElementById('addSegmentBtn').addEventListener('click', addSegment);
+  document.getElementById('nlTotalRolls').addEventListener('input', updateSegmentProgress);
+
+
+  document.getElementById('newLotBtn').addEventListener('click', openNewLotScreen);
+  document.getElementById('backBtnNewLot').addEventListener('click', () => { editingLot = null; renderPending(); renderCompleted(); showScreen('dashboardScreen'); });
+
+  document.getElementById('tabManual').addEventListener('click', () => {
+    document.getElementById('tabManual').classList.add('active');
+    document.getElementById('tabUpload').classList.remove('active');
+    document.getElementById('manualPane').style.display = 'flex';
+    document.getElementById('uploadPane').style.display = 'none';
+  });
+  document.getElementById('tabUpload').addEventListener('click', () => {
+    document.getElementById('tabUpload').classList.add('active');
+    document.getElementById('tabManual').classList.remove('active');
+    document.getElementById('uploadPane').style.display = 'flex';
+    document.getElementById('manualPane').style.display = 'none';
+  });
+
+  document.getElementById('createLotBtn').addEventListener('click', function(){
+    const suffix = document.getElementById('nlLotSuffix').value.trim();
+    const totalRolls = parseInt(document.getElementById('nlTotalRolls').value, 10);
+    const errBox = document.getElementById('manualError');
+
+    if (!suffix || !/^\d+$/.test(suffix)){
+      errBox.textContent = 'Enter a valid lot number (digits only), e.g. 1399.';
+      errBox.classList.add('show');
+      return;
+    }
+    if (!totalRolls || totalRolls < 1){
+      errBox.textContent = 'Enter the total number of rolls for this lot.';
+      errBox.classList.add('show');
+      return;
+    }
+    const fullLot = 'MK26L' + suffix;
+    if (!editingLot && lotNumberExists(fullLot)){
+      errBox.textContent = fullLot + ' already exists. Lot numbers must be unique — choose a different number.';
+      errBox.classList.add('show');
+      return;
+    }
+    if (segments.length === 0){
+      errBox.textContent = 'Add at least one segment.';
+      errBox.classList.add('show');
+      return;
+    }
+
+    let runningTotal = 0;
+    for (const seg of segments){
+      const count = parseInt(seg.count, 10);
+      if (!seg.quality || !seg.colour || !seg.ref || !count || count < 1){
+        errBox.textContent = 'Fill in quality, colour, reference and roll count for every segment.';
+        errBox.classList.add('show');
+        return;
+      }
+      runningTotal += count;
+    }
+    if (runningTotal !== totalRolls){
+      errBox.textContent = 'Segments add up to ' + runningTotal + ' rolls, but Total Rolls is set to ' + totalRolls + '. They must match exactly.';
+      errBox.classList.add('show');
+      return;
+    }
+    errBox.classList.remove('show');
+
+    // Expand segments into per-roll segment lookup ranges
+    const rangeMap = []; // { from, to, quality, colour, ref }
+    let cursor = 1;
+    segments.forEach(seg => {
+      const count = parseInt(seg.count, 10);
+      rangeMap.push({ from: cursor, to: cursor + count - 1, quality: seg.quality, colour: seg.colour, ref: seg.ref });
+      cursor += count;
+    });
+
+    if (editingLot){
+      // Owner is updating an existing lot's structure in place — keep its
+      // identity (lot number, created date, rolls already weighed, etc.)
+      // and only replace the editable fields.
+      editingLot.quality = rangeMap[0].quality;
+      editingLot.colour = rangeMap[0].colour;
+      editingLot.total = totalRolls;
+      editingLot.segments = rangeMap;
+      editingLot.multiSegment = rangeMap.length > 1;
+      editingLot = null;
+
+      renderPending();
+      renderCompleted();
+      showScreen('dashboardScreen');
+      return;
+    }
+
+    const newLot = {
+      lot: fullLot,
+      quality: rangeMap[0].quality, // representative value for card display
+      colour: rangeMap[0].colour,
+      total: totalRolls,
+      rolls: {},
+      created: new Date().toISOString().slice(0,10),
+      createdBy: currentUser,
+      segments: rangeMap,
+      multiSegment: rangeMap.length > 1,
+      priority: false
+    };
+    ALL_LOTS.unshift(newLot);
+
+    renderPending();
+    renderCompleted();
+    showScreen('dashboardScreen');
+  });
+
+  /* ---------------- Upload (simulated parse — real version reads the actual file) ---------------- */
+  let pendingUploadLot = null;
+
+  document.getElementById('dropzone').addEventListener('click', () => {
+    document.getElementById('fileInput').click();
+  });
+
+  document.getElementById('fileInput').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    const errBox = document.getElementById('uploadError');
+    errBox.classList.remove('show');
+    document.getElementById('filePreview').style.display = 'none';
+    document.getElementById('confirmUploadBtn').style.display = 'none';
+    pendingUploadLot = null;
+
+    if (!file) return;
+
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'csv' && ext !== 'xlsx'){
+      errBox.textContent = 'Please upload a .csv or .xlsx file.';
+      errBox.classList.add('show');
+      return;
+    }
+
+    /* PREVIEW NOTE: this mockup simulates reading the file using its name to
+       guess a plausible lot, since real spreadsheet parsing happens in the
+       built app, not this static preview. */
+    const guessNum = (file.name.match(/\d{3,4}/) || [])[0] || String(1400 + Math.floor(Math.random()*200));
+    const simulatedLot = 'MK26L' + guessNum;
+    const simulatedTotal = 10 + Math.floor(Math.random()*30);
+    const simulatedQuality = ["Valentino","Mario Rib","Semi Zurich"][Math.floor(Math.random()*3)];
+    const simulatedColour = ["Black","White","Mint","Navy Blue","Sky","Wine"][Math.floor(Math.random()*6)];
+
+    if (lotNumberExists(simulatedLot)){
+      errBox.textContent = simulatedLot + ' already exists. This file appears to be for a lot that\'s already on the dashboard — lot numbers must be unique.';
+      errBox.classList.add('show');
+      return;
+    }
+
+    pendingUploadLot = {
+      lot: simulatedLot, quality: simulatedQuality, colour: simulatedColour,
+      total: simulatedTotal, rolls: {}, created: new Date().toISOString().slice(0,10),
+      priority: false
+    };
+
+    document.getElementById('filePreviewName').textContent = file.name;
+    document.getElementById('filePreviewSummary').innerHTML =
+      'Detected lot <b>' + simulatedLot + '</b> · ' + simulatedQuality + ' · ' + simulatedColour +
+      ' · ' + simulatedTotal + ' rolls<br>Each row\'s own Internal Reference will be used as given in the file.';
+    document.getElementById('filePreview').style.display = 'block';
+    document.getElementById('confirmUploadBtn').style.display = 'block';
+  });
+
+  document.getElementById('confirmUploadBtn').addEventListener('click', function(){
+    if (!pendingUploadLot) return;
+    if (lotNumberExists(pendingUploadLot.lot)){
+      document.getElementById('uploadError').textContent = pendingUploadLot.lot + ' already exists.';
+      document.getElementById('uploadError').classList.add('show');
+      return;
+    }
+    ALL_LOTS.unshift(pendingUploadLot);
+    pendingUploadLot = null;
+    renderPending();
+    renderCompleted();
+    showScreen('dashboardScreen');
+  });
+
+  /* ================= MANAGE USERS (owner only) ================= */
+  function renderUserManageList(){
+    const wrap = document.getElementById('userManageList');
+    wrap.innerHTML = '';
+    Object.keys(USERS).forEach(name => {
+      const u = USERS[name];
+      const row = document.createElement('div');
+      row.className = 'user-row-card';
+      row.innerHTML = `
+        <div class="user-row-left">
+          <div class="user-avatar">${name.charAt(0).toUpperCase()}</div>
+          <div class="user-row-meta">
+            <div class="user-row-name">${name}</div>
+            <span class="user-row-role ${u.role}">${u.role}</span>
+          </div>
+        </div>
+        <div class="user-row-actions">
+          <button class="user-action-btn" data-action="pass" data-user="${name}">Change Password</button>
+          <button class="user-action-btn danger" data-action="remove" data-user="${name}">Remove</button>
+        </div>
+        <div class="inline-edit-row" id="editRow-${name}" style="display:none; width:100%;">
+          <input type="text" id="editPass-${name}" placeholder="New password">
+          <button class="user-action-btn" data-action="savepass" data-user="${name}">Save</button>
+        </div>`;
+      wrap.appendChild(row);
+    });
+
+    wrap.querySelectorAll('[data-action="pass"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const name = e.target.getAttribute('data-user');
+        const editRow = document.getElementById('editRow-' + name);
+        editRow.style.display = editRow.style.display === 'none' ? 'flex' : 'none';
+      });
+    });
+    wrap.querySelectorAll('[data-action="savepass"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const name = e.target.getAttribute('data-user');
+        const newPass = document.getElementById('editPass-' + name).value.trim();
+        const errBox = document.getElementById('manageUsersError');
+        if (!newPass || newPass.length < 4){
+          errBox.textContent = 'Enter a password at least 4 characters long.';
+          errBox.classList.add('show');
+          return;
+        }
+        USERS[name].password = newPass;
+        errBox.classList.remove('show');
+        document.getElementById('editRow-' + name).style.display = 'none';
+        document.getElementById('editPass-' + name).value = '';
+      });
+    });
+    wrap.querySelectorAll('[data-action="remove"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const name = e.target.getAttribute('data-user');
+        const errBox = document.getElementById('manageUsersError');
+        if (name === currentUser){
+          errBox.textContent = 'You cannot remove the account you are currently signed in as.';
+          errBox.classList.add('show');
+          return;
+        }
+        const remainingOwners = Object.keys(USERS).filter(n => USERS[n].role === 'owner' && n !== name);
+        if (USERS[name].role === 'owner' && remainingOwners.length === 0){
+          errBox.textContent = 'At least one Owner account must remain.';
+          errBox.classList.add('show');
+          return;
+        }
+        delete USERS[name];
+        errBox.classList.remove('show');
+        renderUserManageList();
+      });
+    });
+  }
+
+  document.getElementById('ownerManageUsersBtn').addEventListener('click', () => {
+    document.getElementById('ownerPopover').classList.remove('show');
+    document.getElementById('manageUsersError').classList.remove('show');
+    renderUserManageList();
+    showScreen('manageUsersScreen');
+  });
+  document.getElementById('backBtnManageUsers').addEventListener('click', () => {
+    renderOwnerHome();
+    showScreen('ownerHomeScreen');
+  });
+
+  document.getElementById('addUserBtn').addEventListener('click', () => {
+    const name = document.getElementById('newUserName').value.trim();
+    const pass = document.getElementById('newUserPass').value.trim();
+    const role = document.getElementById('newUserRole').value;
+    const errBox = document.getElementById('manageUsersError');
+
+    if (!name){
+      errBox.textContent = 'Enter a username.';
+      errBox.classList.add('show');
+      return;
+    }
+    const exists = Object.keys(USERS).some(k => k.toLowerCase() === name.toLowerCase());
+    if (exists){
+      errBox.textContent = 'A user named "' + name + '" already exists.';
+      errBox.classList.add('show');
+      return;
+    }
+    if (!pass || pass.length < 4){
+      errBox.textContent = 'Enter a password at least 4 characters long.';
+      errBox.classList.add('show');
+      return;
+    }
+    USERS[name] = { password: pass, role: role };
+    errBox.classList.remove('show');
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserPass').value = '';
+    renderUserManageList();
+  });
+
+  /* init */
+  renderPending();
+  renderCompleted();
+</script>
+
+</body>
+</html>
